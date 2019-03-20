@@ -5,6 +5,7 @@ import time, datetime
 import telepot
 from telepot.loop import MessageLoop
 import random
+import socket
 
 now = datetime.datetime.now()
 
@@ -35,7 +36,7 @@ def action(msg):
                 return
 
         if '/help' in commandL:
-            telegram_bot.sendMessage (chat_id, str("Use the following commands to interact with me:\n\n/Start - Enable all sensors to monitor activities and send updates.\n\n/Stop - Stop all sensor activities, you will no longer receive sensor messages.\n\n/Disable_Vibration_Sensor - Disable updates from vibration sensor.\n\n/Enable_Vibration_Sensor - Resume updates from vibration sensor.\n\n/Disable_Motion_Sensor - Disable updates from motion sensor.\n\n/Enable_Motion_Sensor - Resume updates from motion sensor.\n\n/Time - Report the system time.\n\n/Cam1_Pic - Take a picture from Cam1.\n\n/Cam2_Pic - Take a picture from Cam2.\n\n/Cam1_Video - Capture 10 Sec video from Cam1.\n\n/Cam2_Video - Capture 10 Sec video from Cam2.\n\n/Use_Pic - Send images on sensor triggers for all cameras.\n\n/Use_Pic_Cam1- Send images on sensor triggers for Cam1 only.\n\n/Use_Pic_Cam2- Send images on sensor triggers for Cam2 only.\n\n/Use_Video - Send videos on sensor triggers for all cameras.\n\n/Use_Video_Cam1- Send videos on sensor triggers for Cam1 only.\n\n/Use_Video_Cam2 - Send videos on sensor triggers for Cam2 only.\n\n/Temperature - Check system temperature.\n\n/Disk_Space - Check the space usage on the SD card\n\n/Reboot - Reboot the device.\n\n/Shutdown - Turn off the device."))
+            telegram_bot.sendMessage (chat_id, str("Use the following commands to interact with me:\n\n/Start - Enable all sensors to monitor activities and send updates.\n\n/Stop - Stop all sensor activities, you will no longer receive sensor messages.\n\n/Disable_Vibration_Sensor - Disable updates from vibration sensor.\n\n/Enable_Vibration_Sensor - Resume updates from vibration sensor.\n\n/Disable_Motion_Sensor - Disable updates from motion sensor.\n\n/Enable_Motion_Sensor - Resume updates from motion sensor.\n\n/Time - Report the system time.\n\n/Cam1_Pic - Take a picture from Cam1.\n\n/Cam2_Pic - Take a picture from Cam2.\n\n/Cam1_Video - Capture 10 Sec video from Cam1.\n\n/Cam2_Video - Capture 10 Sec video from Cam2.\n\n/Use_Pic - Send images on sensor triggers for all cameras.\n\n/Use_Pic_Cam1- Send images on sensor triggers for Cam1 only.\n\n/Use_Pic_Cam2- Send images on sensor triggers for Cam2 only.\n\n/Use_Video - Send videos on sensor triggers for all cameras.\n\n/Use_Video_Cam1- Send videos on sensor triggers for Cam1 only.\n\n/Use_Video_Cam2 - Send videos on sensor triggers for Cam2 only.\n\n/Show_ip - Show the local IP address.\n\n/Temperature - Check system temperature.\n\n/Disk_Space - Check the space usage on the SD card\n\n/Reboot - Reboot the device.\n\n/Shutdown - Turn off the device."))
         elif commandL == '/time':
             telegram_bot.sendMessage(chat_id, str(now.hour)+str(":")+str(now.minute))
         elif '/cam1_pic' in commandL:
@@ -133,6 +134,15 @@ def action(msg):
             ts=str(t)
             answer = 'My temperature is '+ts+' °C'
             telegram_bot.sendMessage (chat_id, str(answer))
+        elif commandL == '/show_ip':
+            ip_address = '';
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8",80))
+            ip_address = s.getsockname()[0]
+            s.close()
+            ssid = subprocess.check_output(["iwgetid"])
+            msg = "Connected to:\n"+ssid+"\nLocal IP Address:\n"+ip_address
+            telegram_bot.sendMessage (chat_id, str(msg))
         elif '/disk_space' in commandL:
             result=subprocess.check_output("df -h .", shell=True)
             output=result.split()
