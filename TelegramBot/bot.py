@@ -140,8 +140,9 @@ def action(msg):
             s.connect(("8.8.8.8",80))
             ip_address = s.getsockname()[0]
             s.close()
-            ssid = subprocess.check_output(["iwgetid"])
-            msg = "Connected to:\n"+ssid+"\nLocal IP Address:\n"+ip_address
+            #ssid = subprocess.check_output(["iwgetid"])
+            #msg = "Connected to:\n"+ssid+"\nLocal IP Address:\n"+ip_address
+            msg = "Local IP Address:\n"+ip_address
             telegram_bot.sendMessage (chat_id, str(msg))
         elif '/disk_space' in commandL:
             result=subprocess.check_output("df -h .", shell=True)
