@@ -16,8 +16,9 @@ token = token.strip()
 picPath = str(sys.argv[1])
 #print picPath
 
-print 'Sending pic to telegram..'
 bot = telepot.Bot(token)
-bot.sendPhoto (chat_id, photo=open(picPath))
-
-print 'done sending pic!'
+try:
+  bot.sendPhoto (chat_id, photo=open(picPath))
+  print 'sent'
+except Exception as e:
+  print 'failed'

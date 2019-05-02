@@ -15,9 +15,11 @@ token = token.strip()
 
 vidPath = str(sys.argv[1])
 
-print 'Sending video to telegram..'
 bot = telepot.Bot(token)
-bot.sendVideo (chat_id, video=open(vidPath))
-
-print 'done sending video!!'
+try:
+  bot.sendVideo (chat_id, video=open(vidPath))
+  print 'sent'
+except Exception as e:
+  print e
+  print 'failed'
 
