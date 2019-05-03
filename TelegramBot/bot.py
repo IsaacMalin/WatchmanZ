@@ -6,8 +6,12 @@ import telepot
 from telepot.loop import MessageLoop
 import random
 import socket
+import mysql.connector as mariadb
+import MySQLdb
+
 
 now = datetime.datetime.now()
+mariadb_connection = mariadb.connect(user='watch', password='mawe',database='watchman')
 
 def action(msg):
     chat_id = msg['chat']['id']
@@ -23,6 +27,7 @@ def action(msg):
         file.close()
         command = msg['text']
         commandL = command.lower()
+        commandS = command.split("_")
 
         ts = datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
         print '['+ts+'] Received: %s' % command
@@ -37,8 +42,74 @@ def action(msg):
 
         if '/help' in commandL:
             telegram_bot.sendMessage (chat_id, str("Use the following commands to interact with me:\n\n/Start - Enable all sensors to monitor activities and send updates.\n\n/Stop - Stop all sensor activities, you will no longer receive sensor messages.\n\n/Disable_Vibration_Sensor - Disable updates from vibration sensor.\n\n/Enable_Vibration_Sensor - Resume updates from vibration sensor.\n\n/Disable_Motion_Sensor - Disable updates from motion sensor.\n\n/Enable_Motion_Sensor - Resume updates from motion sensor.\n\n/Time - Report the system time.\n\n/Cam1_Pic - Take a picture from Cam1.\n\n/Cam2_Pic - Take a picture from Cam2.\n\n/Cam1_Video - Capture 10 Sec video from Cam1.\n\n/Cam2_Video - Capture 10 Sec video from Cam2.\n\n/Use_Pic - Send images on sensor triggers for all cameras.\n\n/Use_Pic_Cam1- Send images on sensor triggers for Cam1 only.\n\n/Use_Pic_Cam2- Send images on sensor triggers for Cam2 only.\n\n/Use_Video - Send videos on sensor triggers for all cameras.\n\n/Use_Video_Cam1- Send videos on sensor triggers for Cam1 only.\n\n/Use_Video_Cam2 - Send videos on sensor triggers for Cam2 only.\n\n/Show_ip - Show the local IP address.\n\n/Temperature - Check system temperature.\n\n/Disk_Space - Check the space usage on the SD card\n\n/Reboot - Reboot the device.\n\n/Shutdown - Turn off the device."))
+            pass
         elif commandL == '/time':
             telegram_bot.sendMessage(chat_id, str(now.hour)+str(":")+str(now.minute))
+            pass
+        elif '/disable_message_' in commandL:
+            localID = commandS[2]
+            msg = ' '
+            cursor1 = mariadb_connection.cursor()
+            try:
+              cursor1.execute("SELECT * FROM registeredSensors WHERE localID = '%s'"%(str(localID)))
+              result = cursor1.fetchall()
+              rowCount = len(result)
+              cursor1.close()
+              #print rowCount
+              if rowCount >= 1:
+                for row in result:
+                  sensorName = row[1]
+                cursor2 = mariadb_connection.cursor()
+                try:
+                  cursor2.execute("UPDATE registeredSensors SET sendAlert = '%s' WHERE localID = '%s'"%('0',str(localID)))
+                  rowCount = cursor2.rowcount
+                  cursor2.close()
+                  #print rowCount
+                  if rowCount >= 1:
+                    msg = 'Message update from '+sensorName+' ['+localID+'] has been disabled!!'
+                  else:
+                    msg = 'Message update from '+sensorName+' ['+localID+'] has already been disabled!!'
+                except mariadb.Error as error:
+                  print("Error: {}".format(error))
+                mariadb_connection.commit()
+              else:
+                msg = localID+' isn\'t registered, please confirm the Id and try again..'
+            except mariadb.Error as error:
+              print("Error: {}".format(error))
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
+        elif '/enable_message_' in commandL:
+            localID = commandS[2]
+            msg = ' '
+            cursor1 = mariadb_connection.cursor()
+            try:
+              cursor1.execute("SELECT * FROM registeredSensors WHERE localID = '%s'"%(str(localID)))
+              result = cursor1.fetchall()
+              rowCount = len(result)
+              cursor1.close()
+              #print rowCount
+              if rowCount >= 1:
+                for row in result:
+                  sensorName = row[1]
+                cursor2 = mariadb_connection.cursor()
+                try:
+                  cursor2.execute("UPDATE registeredSensors SET sendAlert = '%s' WHERE localID = '%s'"%('1',str(localID)))
+                  rowCount = cursor2.rowcount
+                  cursor2.close()
+                  #print rowCount
+                  if rowCount >= 1:
+                    msg = 'Message update from '+sensorName+' ['+localID+'] has been enabled!!'
+                  else:
+                    msg = 'Message update from '+sensorName+' ['+localID+'] has already been enabled!!'
+                except mariadb.Error as error:
+                  print("Error: {}".format(error))
+                mariadb_connection.commit()
+              else:
+                msg = localID+' isn\'t registered, please confirm the Id and try again..'
+            except mariadb.Error as error:
+              print("Error: {}".format(error))
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
         elif '/cam1_pic' in commandL:
             telegram_bot.sendMessage(chat_id, str("Capturing Cam1 Image.."))
             output = subprocess.call(["sudo", "/home/pi/Watchman/Images/takePiCamImg.sh", "/home/pi/Watchman/Images/picamimg.jpg"])
@@ -192,4 +263,5 @@ except:
     c = open("/home/pi/Watchman/TelegramBot/isBotRunning.txt","w+")
     status = c.write('0')
     c.close()
+    mariadb_connection.close()
 
