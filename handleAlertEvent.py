@@ -37,6 +37,7 @@ try:
     localID = row[2]
     sensorName = row[1]
     camType = row[7]
+    useCam = row[13]
   cursor.close()
 except mariadb.Error as error:
   print("Error: {}".format(error))
@@ -59,48 +60,49 @@ if authorizeVibMsg == 1:
   #send message to telegram user
   print 'Sending message to Telegram..'
   output = subprocess.Popen(["sudo", "/home/pi/Watchman/TelegramBot/TelegramSendMsg.py", sensorMsg])
-  if mediaOption == 'i':
-    if camType == 'usbcam':
-      imgPath = '/home/pi/Pictures/USB1Cam/'
-      imgName = 'USB1Cam['+ts+'].jpg'
-      ipath = imgPath+imgName
-      #take image from usb1-camera
-      output = subprocess.call(["sudo", "/home/pi/Watchman/Images/takeUSB1CamImg.sh", ipath])
-      pass
-    elif camType == 'picam':
-      piImgPath = '/home/pi/Pictures/PiCam/'
-      piImgName = 'Pi-Cam['+ts+'].jpg'
-      ipath = piImgPath+piImgName
-      #take image from pi-camera
-      output = subprocess.call(["sudo", "/home/pi/Watchman/Images/takePiCamImg.sh", ipath])
-      pass
-    elif camType == 'ipcam':
+  if useCam == 1:
+    if mediaOption == 'i':
+      if camType == 'usbcam':
+        imgPath = '/home/pi/Pictures/USB1Cam/'
+        imgName = 'USB1Cam['+ts+'].jpg'
+        ipath = imgPath+imgName
+        #take image from usb1-camera
+        output = subprocess.call(["sudo", "/home/pi/Watchman/Images/takeUSB1CamImg.sh", ipath])
+        pass
+      elif camType == 'picam':
+        piImgPath = '/home/pi/Pictures/PiCam/'
+        piImgName = 'Pi-Cam['+ts+'].jpg'
+        ipath = piImgPath+piImgName
+        #take image from pi-camera
+        output = subprocess.call(["sudo", "/home/pi/Watchman/Images/takePiCamImg.sh", ipath])
+        pass
+      elif camType == 'ipcam':
 
-      pass
-    #send image to telegram user
-    print 'Sending image to Telegram..'
-    output = subprocess.Popen(["sudo", "/home/pi/Watchman/TelegramBot/TelegramSendPic.py", ipath])
-  if mediaOption == 'v':
-    if camType == 'usbcam':
-      vidPath = '/home/pi/Videos/USB1Cam/'
-      vidName = 'USB1Cam['+ts+'].avi'
-      vpath = vidPath+vidName
-      #take video from usb1-camera
-      output = subprocess.call(["sudo", "/home/pi/Watchman/Videos/takeUSB1CamVid.sh", vpath, str(vidLength)])
-      pass
-    elif camType == 'picam':
-      piVidPath = '/home/pi/Videos/PiCam/'
-      piVidName = 'Pi-Cam['+ts+'].mp4'
-      vpath = piVidPath+piVidName
-      #take video from pi-camera
-      output = subprocess.call(["sudo", "/home/pi/Watchman/Videos/takePiCamVid.sh", vpath, str(vidLength*1000)])
-      pass
-    elif camType == 'ipcam':
+        pass
+      #send image to telegram user
+      print 'Sending image to Telegram..'
+      output = subprocess.Popen(["sudo", "/home/pi/Watchman/TelegramBot/TelegramSendPic.py", ipath])
+    if mediaOption == 'v':
+      if camType == 'usbcam':
+        vidPath = '/home/pi/Videos/USB1Cam/'
+        vidName = 'USB1Cam['+ts+'].avi'
+        vpath = vidPath+vidName
+        #take video from usb1-camera
+        output = subprocess.call(["sudo", "/home/pi/Watchman/Videos/takeUSB1CamVid.sh", vpath, str(vidLength)])
+        pass
+      elif camType == 'picam':
+        piVidPath = '/home/pi/Videos/PiCam/'
+        piVidName = 'Pi-Cam['+ts+'].mp4'
+        vpath = piVidPath+piVidName
+        #take video from pi-camera
+        output = subprocess.call(["sudo", "/home/pi/Watchman/Videos/takePiCamVid.sh", vpath, str(vidLength*1000)])
+        pass
+      elif camType == 'ipcam':
 
-      pass
-    #send video to telegram user
-    print 'Sending video to Telegram..'
-    output = subprocess.call(["sudo", "/home/pi/Watchman/TelegramBot/TelegramSendVid.py", vpath])
+        pass
+      #send video to telegram user
+      print 'Sending video to Telegram..'
+      output = subprocess.call(["sudo", "/home/pi/Watchman/TelegramBot/TelegramSendVid.py", vpath])
 
   #GPIO.output(switchIR, GPIO.LOW)
 GPIO.output(blueLed,GPIO.LOW)
