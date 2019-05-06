@@ -13,6 +13,38 @@ import MySQLdb
 now = datetime.datetime.now()
 mariadb_connection = mariadb.connect(user='watch', password='mawe',database='watchman')
 
+def updateRegister(localID,value,column):
+  cursor1 = mariadb_connection.cursor()
+  try:
+    cursor1.execute("SELECT * FROM registeredSensors WHERE localID = '%s'"%(str(localID)))
+    result = cursor1.fetchall()
+    rowCount = len(result)
+    cursor1.close()
+    #print rowCount
+    if rowCount >= 1:
+      for row in result:
+        sensorName = row[1]
+        cursor2 = mariadb_connection.cursor()
+        try:
+          cursor2.execute("UPDATE registeredSensors SET %s = '%s' WHERE localID = '%s'"%(str(column),str(value),str(localID)))
+          rowCount = cursor2.rowcount
+          cursor2.close()
+          #print rowCount
+          if rowCount >= 1:
+            return '1',sensorName
+          else:
+            return 'A',sensorName
+        except mariadb.Error as error:
+          print("Error: {}".format(error))
+          return '0','0'
+        mariadb_connection.commit()
+    else:
+      return '0','0'
+  except mariadb.Error as error:
+    print("Error: {}".format(error))
+    return '0','0'
+
+
 def action(msg):
     chat_id = msg['chat']['id']
     username = str(msg['chat']['first_name'])
@@ -48,68 +80,95 @@ def action(msg):
             pass
         elif '/disable_message_' in commandL:
             localID = commandS[2]
-            msg = ' '
-            cursor1 = mariadb_connection.cursor()
-            try:
-              cursor1.execute("SELECT * FROM registeredSensors WHERE localID = '%s'"%(str(localID)))
-              result = cursor1.fetchall()
-              rowCount = len(result)
-              cursor1.close()
-              #print rowCount
-              if rowCount >= 1:
-                for row in result:
-                  sensorName = row[1]
-                cursor2 = mariadb_connection.cursor()
-                try:
-                  cursor2.execute("UPDATE registeredSensors SET sendAlert = '%s' WHERE localID = '%s'"%('0',str(localID)))
-                  rowCount = cursor2.rowcount
-                  cursor2.close()
-                  #print rowCount
-                  if rowCount >= 1:
-                    msg = 'Message update from '+sensorName+' ['+localID+'] has been disabled!!'
-                  else:
-                    msg = 'Message update from '+sensorName+' ['+localID+'] has already been disabled!!'
-                except mariadb.Error as error:
-                  print("Error: {}".format(error))
-                mariadb_connection.commit()
-              else:
-                msg = localID+' isn\'t registered, please confirm the Id and try again..'
-            except mariadb.Error as error:
-              print("Error: {}".format(error))
+            response = updateRegister(localID,0,'sendAlert')
+            state = response[0]
+            sensorName = response[1]
+            if state == '1':
+              msg = 'Message update from '+sensorName+' ['+localID+'] has been disabled!!'
+            elif state == 'A':
+              msg = 'Message update from '+sensorName+' ['+localID+'] is already disabled!!'
+            elif state == '0':
+              msg = localID+' isn\'t registered, please confirm the ID and try again..'
+            else:
+              msg = 'Operation failed, please try again..'
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
         elif '/enable_message_' in commandL:
             localID = commandS[2]
-            msg = ' '
-            cursor1 = mariadb_connection.cursor()
-            try:
-              cursor1.execute("SELECT * FROM registeredSensors WHERE localID = '%s'"%(str(localID)))
-              result = cursor1.fetchall()
-              rowCount = len(result)
-              cursor1.close()
-              #print rowCount
-              if rowCount >= 1:
-                for row in result:
-                  sensorName = row[1]
-                cursor2 = mariadb_connection.cursor()
-                try:
-                  cursor2.execute("UPDATE registeredSensors SET sendAlert = '%s' WHERE localID = '%s'"%('1',str(localID)))
-                  rowCount = cursor2.rowcount
-                  cursor2.close()
-                  #print rowCount
-                  if rowCount >= 1:
-                    msg = 'Message update from '+sensorName+' ['+localID+'] has been enabled!!'
-                  else:
-                    msg = 'Message update from '+sensorName+' ['+localID+'] has already been enabled!!'
-                except mariadb.Error as error:
-                  print("Error: {}".format(error))
-                mariadb_connection.commit()
-              else:
-                msg = localID+' isn\'t registered, please confirm the Id and try again..'
-            except mariadb.Error as error:
-              print("Error: {}".format(error))
+            response = updateRegister(localID,1,'sendAlert')
+            state = response[0]
+            sensorName = response[1]
+            if state == '1':
+              msg = 'Message update from '+sensorName+' ['+localID+'] has been enabled!!'
+            elif state == 'A':
+              msg = 'Message update from '+sensorName+' ['+localID+'] is already enabled!!'
+            elif state == '0':
+              msg = localID+' isn\'t registered, please confirm the ID and try again..'
+            else:
+              msg = 'Operation failed, please try again..'
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
+        elif '/disable_sms_' in commandL:
+            localID = commandS[2]
+            response = updateRegister(localID,0,'sendSms')
+            state = response[0]
+            sensorName = response[1]
+            if state == '1':
+              msg = 'SMS update from '+sensorName+' ['+localID+'] has been disabled!!'
+            elif state == 'A':
+              msg = 'SMS update from '+sensorName+' ['+localID+'] is already disabled!!'
+            elif state == '0':
+              msg = localID+' isn\'t registered, please confirm the ID and try again..'
+            else:
+              msg = 'Operation failed, please try again..'
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
+        elif '/enable_sms_' in commandL:
+            localID = commandS[2]
+            response = updateRegister(localID,1,'sendSms')
+            state = response[0]
+            sensorName = response[1]
+            if state == '1':
+              msg = 'SMS update from '+sensorName+' ['+localID+'] has been enabled!!'
+            elif state == 'A':
+              msg = 'SMS update from '+sensorName+' ['+localID+'] is already enabled!!'
+            elif state == '0':
+              msg = localID+' isn\'t registered, please confirm the ID and try again..'
+            else:
+              msg = 'Operation failed, please try again..'
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
+        elif '/disable_media_' in commandL:
+            localID = commandS[2]
+            response = updateRegister(localID,0,'useCam')
+            state = response[0]
+            sensorName = response[1]
+            if state == '1':
+              msg = 'Media update from '+sensorName+' ['+localID+'] has been disabled!!'
+            elif state == 'A':
+              msg = 'Media update from '+sensorName+' ['+localID+'] is already disabled!!'
+            elif state == '0':
+              msg = localID+' isn\'t registered, please confirm the ID and try again..'
+            else:
+              msg = 'Operation failed, please try again..'
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
+        elif '/enable_media_' in commandL:
+            localID = commandS[2]
+            response = updateRegister(localID,1,'useCam')
+            state = response[0]
+            sensorName = response[1]
+            if state == '1':
+              msg = 'Media update from '+sensorName+' ['+localID+'] has been enabled!!'
+            elif state == 'A':
+              msg = 'Media update from '+sensorName+' ['+localID+'] is already enabled!!'
+            elif state == '0':
+              msg = localID+' isn\'t registered, please confirm the ID and try again..'
+            else:
+              msg = 'Operation failed, please try again..'
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
+
         elif '/cam1_pic' in commandL:
             telegram_bot.sendMessage(chat_id, str("Capturing Cam1 Image.."))
             output = subprocess.call(["sudo", "/home/pi/Watchman/Images/takePiCamImg.sh", "/home/pi/Watchman/Images/picamimg.jpg"])
