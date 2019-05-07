@@ -11,9 +11,9 @@ import MySQLdb
 
 
 now = datetime.datetime.now()
-mariadb_connection = mariadb.connect(user='watch', password='mawe',database='watchman')
 
-def updateRegister(localID,value,column):
+def updateRegister(numOfValues,localID,value1,column1,value2=None,column2=None,value3=None,column3=None,value4=None,column4=None):
+  mariadb_connection = mariadb.connect(user='watch', password='mawe',database='watchman')
   cursor1 = mariadb_connection.cursor()
   try:
     cursor1.execute("SELECT * FROM registeredSensors WHERE localID = '%s'"%(str(localID)))
@@ -24,26 +24,51 @@ def updateRegister(localID,value,column):
     if rowCount >= 1:
       for row in result:
         sensorName = row[1]
+        vidLength = row[10]
+        camType = row[7]
+        camIP = row[8]
         cursor2 = mariadb_connection.cursor()
         try:
-          cursor2.execute("UPDATE registeredSensors SET %s = '%s' WHERE localID = '%s'"%(str(column),str(value),str(localID)))
+          if numOfValues == 1:
+            cursor2.execute("UPDATE registeredSensors SET %s = '%s' WHERE localID = '%s'"%(str(column1),str(value1),str(localID)))
+          elif numOfValues == 2:
+            cursor2.execute("UPDATE registeredSensors SET %s = '%s', %s = '%s' WHERE localID = '%s'"%(str(column1),str(value1),str(column2),str(value2),str(localID)))
+          elif numOfValues == 3:
+            cursor2.execute("UPDATE registeredSensors SET %s = '%s', %s = '%s', %s = '%s' WHERE localID = '%s'"%(str(column1),str(value1),str(column2),str(value2),str(column3),str(value3),str(localID)))
+          elif numOfValues == 4:
+            cursor2.execute("UPDATE registeredSensors SET %s = '%s', %s = '%s', %s = '%s', %s = '%s' WHERE localID = '%s'"%(str(column1),str(value1),str(column2),str(value2),str(column3),str(value3),str(column4),str(value4),str(localID)))
+          else:
+            return '0','0','0','0','0'
           rowCount = cursor2.rowcount
           cursor2.close()
+          mariadb_connection.commit()
           #print rowCount
           if rowCount >= 1:
-            return '1',sensorName
+            return '1',sensorName,vidLength,camType,camIP
           else:
-            return 'A',sensorName
+            return 'A',sensorName,vidLength,camType,camIP
         except mariadb.Error as error:
           print("Error: {}".format(error))
-          return '0','0'
-        mariadb_connection.commit()
+          return '0','0','0','0','0'
     else:
-      return '0','0'
+      return '0','0','0','0','0'
   except mariadb.Error as error:
     print("Error: {}".format(error))
-    return '0','0'
+    return '0','0','0','0','0'
+  mariadb_connection.close()
 
+#use this function to check if ip address is valid
+def validate_ip(s):
+    a = s.split('.')
+    if len(a) != 4:
+        return False
+    for x in a:
+        if not x.isdigit():
+            return False
+        i = int(x)
+        if i < 0 or i > 255:
+            return False
+    return True
 
 def action(msg):
     chat_id = msg['chat']['id']
@@ -80,7 +105,7 @@ def action(msg):
             pass
         elif '/disable_message_' in commandL:
             localID = commandS[2]
-            response = updateRegister(localID,0,'sendAlert')
+            response = updateRegister(1,localID,0,'sendAlert')
             state = response[0]
             sensorName = response[1]
             if state == '1':
@@ -95,7 +120,7 @@ def action(msg):
             pass
         elif '/enable_message_' in commandL:
             localID = commandS[2]
-            response = updateRegister(localID,1,'sendAlert')
+            response = updateRegister(1,localID,1,'sendAlert')
             state = response[0]
             sensorName = response[1]
             if state == '1':
@@ -110,7 +135,7 @@ def action(msg):
             pass
         elif '/disable_sms_' in commandL:
             localID = commandS[2]
-            response = updateRegister(localID,0,'sendSms')
+            response = updateRegister(1,localID,0,'sendSms')
             state = response[0]
             sensorName = response[1]
             if state == '1':
@@ -125,7 +150,7 @@ def action(msg):
             pass
         elif '/enable_sms_' in commandL:
             localID = commandS[2]
-            response = updateRegister(localID,1,'sendSms')
+            response = updateRegister(1,localID,1,'sendSms')
             state = response[0]
             sensorName = response[1]
             if state == '1':
@@ -140,7 +165,7 @@ def action(msg):
             pass
         elif '/disable_media_' in commandL:
             localID = commandS[2]
-            response = updateRegister(localID,0,'useCam')
+            response = updateRegister(1,localID,0,'useCam')
             state = response[0]
             sensorName = response[1]
             if state == '1':
@@ -155,7 +180,7 @@ def action(msg):
             pass
         elif '/enable_media_' in commandL:
             localID = commandS[2]
-            response = updateRegister(localID,1,'useCam')
+            response = updateRegister(1,localID,1,'useCam')
             state = response[0]
             sensorName = response[1]
             if state == '1':
@@ -168,7 +193,152 @@ def action(msg):
               msg = 'Operation failed, please try again..'
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
-
+        elif 'use_media_' in commandL:
+            try:
+              media = commandS[2]
+              localID = commandS[3]
+            except Exception as e:
+              media = '0'
+            if media.lower() == 'video':
+              response = updateRegister(1,localID,'v','iOrv')
+              state = response[0]
+              sensorName = response[1]
+              vidLength = response[2]
+              camType = response[3]
+              camIP = response[4]
+              if state == '1':
+                if camType == 'ipcam':
+                  msg = sensorName+' ['+localID+'] will send '+str(vidLength)+' Sec videos from '+camType+' '+camIP+' on sensor trigger!!'
+                else:
+                  msg = sensorName+' ['+localID+'] will send '+str(vidLength)+' Sec videos from '+camType+' on sensor trigger!!'
+              elif state == 'A':
+                if camType == 'ipcam':
+                  msg = sensorName+' ['+localID+'] is already configured to send videos from '+camType+' '+camIP+' on sensor trigger!!'
+                else:
+                  msg = sensorName+' ['+localID+'] is already configured to send videos from '+camType+' on sensor trigger!!'
+              elif state == '0':
+                msg = 'Please confirm the ID and try again, you entered: \''+localID+'\' as your sensorID'
+              else:
+                msg = 'Operation failed, please try again..'
+            elif media.lower() == 'image':
+              response = updateRegister(1,localID,'i','iOrv')
+              state = response[0]
+              sensorName = response[1]
+              camType = response[3]
+              camIP = response[4]
+              if state == '1':
+                if camType == 'ipcam':
+                  msg = sensorName+' ['+localID+'] will send images from '+camType+' '+camIP+' on sensor trigger!!'
+                else:
+                  msg = sensorName+' ['+localID+'] will send images from '+camType+' on sensor trigger!!'
+              elif state == 'A':
+                if camType == 'ipcam':
+                  msg = sensorName+' ['+localID+'] is already configured to send images from '+camType+' '+camIP+' on sensor trigger!!'
+                else:
+                  msg = sensorName+' ['+localID+'] is already configured to send images from '+camType+' on sensor trigger!!'
+              elif state == '0':
+                msg = 'Please confirm the ID and try again, you entered: \''+localID+'\' as your sensorID'
+              else:
+                msg = 'Operation failed, please try again..'
+            else:
+              msg = 'Please specify either image or video and sensorID in your syntax. \n The correct syntax is \'/use_media_video_SensorID\' or \'/use_media_image_SensorID\''
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
+        elif '/set_videolength_' in commandL:
+            try:
+              length = commandS[2]
+              localID = commandS[3]
+              error = 0
+            except Exception as e:
+              error = 1
+            if error == 0:
+              try:
+                len = int(length)
+                error = 0
+              except Exception as e:
+                error = 1
+              if error == 0:
+                if int(length) > 3 and int(length) < 60:
+                  response = updateRegister(1,localID,str(length),'vidLength')
+                  state = response[0]
+                  sensorName = response[1]
+                  vidLength = response[2]
+                  camType = response[3]
+                  camIP = response[4]
+                  if state == '1':
+                    if camType == 'ipcam':
+                      msg = sensorName+' ['+localID+'] will send '+str(length)+' Sec videos from '+camType+' '+camIP+' on sensor trigger when video mode is selected!!'
+                    else:
+                      msg = sensorName+' ['+localID+'] will send '+str(length)+' Sec videos from '+camType+' on sensor trigger when video mode is selected!!'
+                  elif state == 'A':
+                    if camType == 'ipcam':
+                      msg = sensorName+' ['+localID+'] is already configured to send '+str(length)+' Sec videos from '+camType+' '+camIP+' on sensor trigger if video mode is selected!!'
+                    else:
+                      msg = sensorName+' ['+localID+'] is already configured to send '+str(length)+' Sec videos from '+camType+' on sensor trigger if video mode is selected!!'
+                  elif state == '0':
+                    msg = 'Please confirm the ID and try again, you entered: \''+localID+'\' as your sensorID'
+                  else:
+                    msg = 'Operation failed, please try again..'
+                else:
+                  msg = 'Please enter video length between 3 and 60 Seconds. \nThe correct syntax is: \n\'/set_videolength_seconds_SensorID'
+              else:
+                msg = 'Please enter a valid number between 3 and 60 as the video length..'
+            else:
+              msg = 'Use the correct syntax and try again. \nThe correct syntax is \'/Set_videolength_seconds_SensorID\''
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
+        elif '/use_camera_' in commandL:
+            try:
+              cam = commandS[2]
+              localID = commandS[3]
+              error = 0
+            except Exception as e:
+              print e
+              error = 1
+            if error == 0:
+              if cam == 'ipcam':
+                try:
+                  ipAddr = commandS[4]
+                  error = 0
+                except Exception as e:
+                  print e
+                  error = 1
+                if error == 0:
+                  validIP = validate_ip(ipAddr)
+                  if validIP == True:
+                    response = updateRegister(2,localID,cam,'camType',ipAddr,'camIP')
+                    state = response[0]
+                    sensorName = response[1]
+                    if state == '1':
+                      msg = sensorName+' ['+localID+'] will use '+cam+' '+ipAddr+' for videos and images'
+                    elif state == 'A':
+                      msg = sensorName+' ['+localID+'] is already configured to use '+cam+' '+ipAddr+' for videos and images'
+                    elif state == '0':
+                      msg = localID+' isn\'t registered, please confirm the ID and try again..'
+                    else:
+                      msg = 'Operation failed, please try again..'
+                  else:
+                    msg = 'You have entered an invalid IP Address, check the IP Address and try again..'
+                else:
+                  msg = 'Please provide an IP address. The correct syntax is: \nThe correct syntax is \'/Use_camera_cameratype_SensorID_ipaddress\''
+              elif cam == 'usbcam' or cam == 'picam':
+                response = updateRegister(1,localID,cam,'camType')
+                state = response[0]
+                sensorName = response[1]
+                if state == '1':
+                  msg = sensorName+' ['+localID+'] will use '+cam+' for videos and images'
+                elif state == 'A':
+                  msg = sensorName+' ['+localID+'] is already configured to use '+cam+' for videos and images'
+                elif state == '0':
+                  msg = localID+' isn\'t registered, please confirm the ID and try again..'
+                else:
+                  msg = 'Operation failed, please try again..'
+              else:
+                msg = 'Please enter a valid camera type. \nThe correct syntax is \'/Use_camera_cameratype_SensorID_ipaddress\' \nWhere cameratype is either: usbcam, picam or ipcam.\nIf camera type is ipcam you have to type its ip address in the ipaddress section.'
+            else:
+              msg = 'Please use the correct syntax and try again. \nThe correct syntax is \'/Use_camera_cameratype_SensorID_ipaddress\' \nWhere cameratype is either: usbcam, picam or ipcam.\nIf camera type is ipcam you have to type its ip address in the ipaddress section.'
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
         elif '/cam1_pic' in commandL:
             telegram_bot.sendMessage(chat_id, str("Capturing Cam1 Image.."))
             output = subprocess.call(["sudo", "/home/pi/Watchman/Images/takePiCamImg.sh", "/home/pi/Watchman/Images/picamimg.jpg"])
@@ -187,62 +357,6 @@ def action(msg):
             output = subprocess.call(["sudo", "rm", "/home/pi/Watchman/Videos/usb1camvid.avi"])
             output = subprocess.call(["sudo", "/home/pi/Watchman/Videos/takeUSB1CamVid.sh", "/home/pi/Watchman/Videos/usb1camvid.avi", "10"])
             telegram_bot.sendVideo (chat_id, video=open('/home/pi/Watchman/Videos/usb1camvid.avi'))
-        elif '/use_pic_cam1' in commandL:
-            o = open("/home/pi/Watchman/imageOrVideoCam1.txt","w+")
-            o.write('i')
-            o.close()
-            telegram_bot.sendMessage (chat_id, str("I will send pictures on sensor triggers for Cam1.."))
-        elif '/use_pic_cam2' in commandL:
-            o = open("/home/pi/Watchman/imageOrVideoCam2.txt","w+")
-            o.write('i')
-            o.close()
-            telegram_bot.sendMessage (chat_id, str("I will send pictures on sensor triggers for Cam2.."))
-        elif '/use_pic' in commandL:
-            o = open("/home/pi/Watchman/imageOrVideoCam1.txt","w+")
-            o.write('i')
-            o.close()
-            o = open("/home/pi/Watchman/imageOrVideoCam2.txt","w+")
-            o.write('i')
-            o.close()
-            telegram_bot.sendMessage (chat_id, str("I will send pictures on sensor triggers for all cameras.."))
-        elif '/use_video_cam1' in commandL:
-            o = open("/home/pi/Watchman/imageOrVideoCam1.txt","w+")
-            o.write('v')
-            o.close()
-            telegram_bot.sendMessage (chat_id, str("I will send videos on sensor triggers for Cam1.."))
-        elif '/use_video_cam2' in commandL:
-            o = open("/home/pi/Watchman/imageOrVideoCam2.txt","w+")
-            o.write('v')
-            o.close()
-            telegram_bot.sendMessage (chat_id, str("I will send videos on sensor triggers for Cam2.."))
-        elif '/use_video' in commandL:
-            o = open("/home/pi/Watchman/imageOrVideoCam1.txt","w+")
-            o.write('v')
-            o.close()
-            o = open("/home/pi/Watchman/imageOrVideoCam2.txt","w+")
-            o.write('v')
-            o.close()
-            telegram_bot.sendMessage (chat_id, str("I will send videos on sensor triggers for all cameras.."))
-        elif '/disable_vibration_sensor' in commandL:
-            v = open("/home/pi/Watchman/allowToSendVibMsg.txt","w+")
-            v.write('0')
-            v.close()
-            telegram_bot.sendMessage (chat_id, str("Vibration sensor disabled!!"))
-        elif '/enable_vibration_sensor' in commandL:
-            v = open("/home/pi/Watchman/allowToSendVibMsg.txt","w+")
-            v.write('1')
-            v.close()
-            telegram_bot.sendMessage (chat_id, str("Vibration sensor enabled!!"))
-        elif '/disable_motion_sensor' in commandL:
-            m = open("/home/pi/Watchman/allowToSendMotionMsg.txt","w+")
-            m.write('0')
-            m.close()
-            telegram_bot.sendMessage (chat_id, str("Motion sensor disabled!!"))
-        elif '/enable_motion_sensor' in commandL:
-            m = open("/home/pi/Watchman/allowToSendMotionMsg.txt","w+")
-            m.write('1')
-            m.close()
-            telegram_bot.sendMessage (chat_id, str("Motion sensor enabled!!"))
         elif commandL == '/stop':
             m = open("/home/pi/Watchman/allowToSendMotionMsg.txt","w+")
             m.write('0')
@@ -322,5 +436,4 @@ except:
     c = open("/home/pi/Watchman/TelegramBot/isBotRunning.txt","w+")
     status = c.write('0')
     c.close()
-    mariadb_connection.close()
 
