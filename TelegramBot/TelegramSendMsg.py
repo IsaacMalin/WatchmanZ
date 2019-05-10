@@ -16,8 +16,9 @@ token = token.strip()
 msg = str(sys.argv[1])
 #print msg
 
-print 'Sending msg to telegram..'
 bot = telepot.Bot(token)
-bot.sendMessage(chat_id, str(msg))
-
-print 'done sending message!'
+try:
+  bot.sendMessage(chat_id, str(msg))
+  print 'sent'
+except Exception as e:
+  print 'failed'
