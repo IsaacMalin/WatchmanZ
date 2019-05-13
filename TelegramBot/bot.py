@@ -139,99 +139,117 @@ def action(msg):
                 return
 
         if '/help' in commandL:
-            telegram_bot.sendMessage (chat_id, str("Use the following commands to interact with me:\n\n/Start - Enable all sensors to monitor activities and send updates.\n\n/Stop - Stop all sensor activities, you will no longer receive sensor messages.\n\n/Disable_Vibration_Sensor - Disable updates from vibration sensor.\n\n/Enable_Vibration_Sensor - Resume updates from vibration sensor.\n\n/Disable_Motion_Sensor - Disable updates from motion sensor.\n\n/Enable_Motion_Sensor - Resume updates from motion sensor.\n\n/Time - Report the system time.\n\n/Cam1_Pic - Take a picture from Cam1.\n\n/Cam2_Pic - Take a picture from Cam2.\n\n/Cam1_Video - Capture 10 Sec video from Cam1.\n\n/Cam2_Video - Capture 10 Sec video from Cam2.\n\n/Use_Pic - Send images on sensor triggers for all cameras.\n\n/Use_Pic_Cam1- Send images on sensor triggers for Cam1 only.\n\n/Use_Pic_Cam2- Send images on sensor triggers for Cam2 only.\n\n/Use_Video - Send videos on sensor triggers for all cameras.\n\n/Use_Video_Cam1- Send videos on sensor triggers for Cam1 only.\n\n/Use_Video_Cam2 - Send videos on sensor triggers for Cam2 only.\n\n/Show_ip - Show the local IP address.\n\n/Temperature - Check system temperature.\n\n/Disk_Space - Check the space usage on the SD card\n\n/Reboot - Reboot the device.\n\n/Shutdown - Turn off the device."))
+            telegram_bot.sendMessage (chat_id, str("Use the following commands to interact with me:\n\n/Start - Enable all sensors to send updates when triggered.\n\n/Stop - Stop all sensor message updates.\n\n/Show_registered_sensors - Show all registered sensors.\n\n/Register_sensor_nodeID_localID_globalID_description - Register a new sensor.\n\n/Remove_sensor_SensorID - Unregister a sensor.\n\n/Show_configuration_SensorID - Show the configuration of your sensor.\n\n/Enable_message_SensorID - Enable message updates from your sensor.\n\n/Disable_message_SensorID - Disable alerts from your sensor.\n\n/Enable_media_SensorID - Enable media alerts(photo or video) when sensor is triggered.\n\n/Disable_media_SensorID - Disable photo and video messages when sensor is triggered.\n\n/Enable_sms_SensorID - Enable your sensor to send SMS message when Internet is unavailable.\n\n/Disable_sms_SensorID - Disable SMS alerts from your sensor.\n\n/Use_media_video_SensorID or \n/Use_media_image_SensorID - Configure your sensor to send either photos or videos when triggered.\n\n/Use_camera_cameratype_SensorID_ipaddress - Configure the type of camera your sensor will use when triggered.\n\n/Set_videolength_seconds_SensorID - Configure video clip duration when video mode is selected.\n\n/Capture_media_cameratype_seconds_ipaddress - Capture an image or video from your camera.\n\n/Temperature - Check system temperature.\n\n/Disk_Space - Check space usage on the SD card\n\n/Reboot - Reboot the device.\n\n/Shutdown - Turn off the device."))
             pass
         elif commandL == '/time':
             telegram_bot.sendMessage(chat_id, str(now.hour)+str(":")+str(now.minute))
             pass
         elif '/disable_message_' in commandL:
             localID = commandS[2]
-            response = updateRegister(1,localID,0,'sendAlert')
-            state = response[0]
-            sensorName = response[1]
-            if state == '1':
-              msg = 'Message update from '+sensorName+' ['+localID+'] has been disabled!!'
-            elif state == 'A':
-              msg = 'Message update from '+sensorName+' ['+localID+'] is already disabled!!'
-            elif state == '0':
-              msg = localID+' isn\'t registered, please confirm the ID and try again..'
+            if validate_localID(localID):
+              response = updateRegister(1,localID,0,'sendAlert')
+              state = response[0]
+              sensorName = response[1]
+              if state == '1':
+                msg = 'Message update from '+sensorName+' ['+localID+'] has been disabled!!'
+              elif state == 'A':
+                msg = 'Message update from '+sensorName+' ['+localID+'] is already disabled!!'
+              elif state == '0':
+                msg = localID+' isn\'t registered, please confirm the ID and try again..'
+              else:
+                msg = 'Operation failed, please try again..'
             else:
-              msg = 'Operation failed, please try again..'
+              msg = "Please provide a valid ID. The correct format is: \n'/Disable_message_localID' \nWhere 'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
         elif '/enable_message_' in commandL:
             localID = commandS[2]
-            response = updateRegister(1,localID,1,'sendAlert')
-            state = response[0]
-            sensorName = response[1]
-            if state == '1':
-              msg = 'Message update from '+sensorName+' ['+localID+'] has been enabled!!'
-            elif state == 'A':
-              msg = 'Message update from '+sensorName+' ['+localID+'] is already enabled!!'
-            elif state == '0':
-              msg = localID+' isn\'t registered, please confirm the ID and try again..'
+            if validate_localID(localID):
+              response = updateRegister(1,localID,1,'sendAlert')
+              state = response[0]
+              sensorName = response[1]
+              if state == '1':
+                msg = 'Message update from '+sensorName+' ['+localID+'] has been enabled!!'
+              elif state == 'A':
+                msg = 'Message update from '+sensorName+' ['+localID+'] is already enabled!!'
+              elif state == '0':
+                msg = localID+' isn\'t registered, please confirm the ID and try again..'
+              else:
+                msg = 'Operation failed, please try again..'
             else:
-              msg = 'Operation failed, please try again..'
+              msg = "Please provide a valid ID. The correct format is \n'/Enable_message_localID' \nWhere 'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
         elif '/disable_sms_' in commandL:
             localID = commandS[2]
-            response = updateRegister(1,localID,0,'sendSms')
-            state = response[0]
-            sensorName = response[1]
-            if state == '1':
-              msg = 'SMS update from '+sensorName+' ['+localID+'] has been disabled!!'
-            elif state == 'A':
-              msg = 'SMS update from '+sensorName+' ['+localID+'] is already disabled!!'
-            elif state == '0':
-              msg = localID+' isn\'t registered, please confirm the ID and try again..'
+            if validate_localID(localID):
+              response = updateRegister(1,localID,0,'sendSms')
+              state = response[0]
+              sensorName = response[1]
+              if state == '1':
+                msg = 'SMS update from '+sensorName+' ['+localID+'] has been disabled!!'
+              elif state == 'A':
+                msg = 'SMS update from '+sensorName+' ['+localID+'] is already disabled!!'
+              elif state == '0':
+                msg = localID+' isn\'t registered, please confirm the ID and try again..'
+              else:
+                msg = 'Operation failed, please try again..'
             else:
-              msg = 'Operation failed, please try again..'
+              msg = "Please provide a valid ID. The correct format is \n'/Disable_sms_localID' \nWhere 'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
         elif '/enable_sms_' in commandL:
             localID = commandS[2]
-            response = updateRegister(1,localID,1,'sendSms')
-            state = response[0]
-            sensorName = response[1]
-            if state == '1':
-              msg = 'SMS update from '+sensorName+' ['+localID+'] has been enabled!!'
-            elif state == 'A':
-              msg = 'SMS update from '+sensorName+' ['+localID+'] is already enabled!!'
-            elif state == '0':
-              msg = localID+' isn\'t registered, please confirm the ID and try again..'
+            if validate_localID(localID):
+              response = updateRegister(1,localID,1,'sendSms')
+              state = response[0]
+              sensorName = response[1]
+              if state == '1':
+                msg = 'SMS update from '+sensorName+' ['+localID+'] has been enabled!!'
+              elif state == 'A':
+                msg = 'SMS update from '+sensorName+' ['+localID+'] is already enabled!!'
+              elif state == '0':
+                msg = localID+' isn\'t registered, please confirm the ID and try again..'
+              else:
+                msg = 'Operation failed, please try again..'
             else:
-              msg = 'Operation failed, please try again..'
+              msg = "Please provide a valid ID. The correct format is \n'/Enable_sms_localID' \nWhere 'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
         elif '/disable_media_' in commandL:
             localID = commandS[2]
-            response = updateRegister(1,localID,0,'useCam')
-            state = response[0]
-            sensorName = response[1]
-            if state == '1':
-              msg = 'Media update from '+sensorName+' ['+localID+'] has been disabled!!'
-            elif state == 'A':
-              msg = 'Media update from '+sensorName+' ['+localID+'] is already disabled!!'
-            elif state == '0':
-              msg = localID+' isn\'t registered, please confirm the ID and try again..'
+            if validate_localID(localID):
+              response = updateRegister(1,localID,0,'useCam')
+              state = response[0]
+              sensorName = response[1]
+              if state == '1':
+                msg = 'Media update from '+sensorName+' ['+localID+'] has been disabled!!'
+              elif state == 'A':
+                msg = 'Media update from '+sensorName+' ['+localID+'] is already disabled!!'
+              elif state == '0':
+                msg = localID+' isn\'t registered, please confirm the ID and try again..'
+              else:
+                msg = 'Operation failed, please try again..'
             else:
-              msg = 'Operation failed, please try again..'
+              msg = "Please provide a valid ID. The correct format is \n'/Disable_media_localID' \nWhere 'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
         elif '/enable_media_' in commandL:
             localID = commandS[2]
-            response = updateRegister(1,localID,1,'useCam')
-            state = response[0]
-            sensorName = response[1]
-            if state == '1':
-              msg = 'Media update from '+sensorName+' ['+localID+'] has been enabled!!'
-            elif state == 'A':
-              msg = 'Media update from '+sensorName+' ['+localID+'] is already enabled!!'
-            elif state == '0':
-              msg = localID+' isn\'t registered, please confirm the ID and try again..'
+            if validate_localID(localID):
+              response = updateRegister(1,localID,1,'useCam')
+              state = response[0]
+              sensorName = response[1]
+              if state == '1':
+                msg = 'Media update from '+sensorName+' ['+localID+'] has been enabled!!'
+              elif state == 'A':
+                msg = 'Media update from '+sensorName+' ['+localID+'] is already enabled!!'
+              elif state == '0':
+                msg = localID+' isn\'t registered, please confirm the ID and try again..'
+              else:
+                msg = 'Operation failed, please try again..'
             else:
-              msg = 'Operation failed, please try again..'
+              msg = "Please provide a valid ID. The correct format is \n'/Enable_media_localID' \nWhere 'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
         elif 'use_media_' in commandL:
@@ -241,48 +259,54 @@ def action(msg):
             except Exception as e:
               media = '0'
             if media.lower() == 'video':
-              response = updateRegister(1,localID,'v','iOrv')
-              state = response[0]
-              sensorName = response[1]
-              vidLength = response[2]
-              camType = response[3]
-              camIP = response[4]
-              if state == '1':
-                if camType == 'ipcam':
-                  msg = sensorName+' ['+localID+'] will send '+str(vidLength)+' Sec videos from '+camType+' '+camIP+' on sensor trigger!!'
+              if validate_localID(localID):
+                response = updateRegister(1,localID,'v','iOrv')
+                state = response[0]
+                sensorName = response[1]
+                vidLength = response[2]
+                camType = response[3]
+                camIP = response[4]
+                if state == '1':
+                  if camType == 'ipcam':
+                    msg = sensorName+' ['+localID+'] will send '+str(vidLength)+' Sec videos from '+camType+' '+camIP+' on sensor trigger!!'
+                  else:
+                    msg = sensorName+' ['+localID+'] will send '+str(vidLength)+' Sec videos from '+camType+' on sensor trigger!!'
+                elif state == 'A':
+                  if camType == 'ipcam':
+                    msg = sensorName+' ['+localID+'] is already configured to send videos from '+camType+' '+camIP+' on sensor trigger!!'
+                  else:
+                    msg = sensorName+' ['+localID+'] is already configured to send videos from '+camType+' on sensor trigger!!'
+                elif state == '0':
+                  msg = 'Please confirm the ID and try again, you entered: \''+localID+'\' as your sensorID'
                 else:
-                  msg = sensorName+' ['+localID+'] will send '+str(vidLength)+' Sec videos from '+camType+' on sensor trigger!!'
-              elif state == 'A':
-                if camType == 'ipcam':
-                  msg = sensorName+' ['+localID+'] is already configured to send videos from '+camType+' '+camIP+' on sensor trigger!!'
-                else:
-                  msg = sensorName+' ['+localID+'] is already configured to send videos from '+camType+' on sensor trigger!!'
-              elif state == '0':
-                msg = 'Please confirm the ID and try again, you entered: \''+localID+'\' as your sensorID'
+                  msg = 'Operation failed, please try again..'
               else:
-                msg = 'Operation failed, please try again..'
+                msg = 'Please provide a valid ID. The correct format is: \n\'/Use_media_video_localID\' or \n/Use_media_image_localID \nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
             elif media.lower() == 'image':
-              response = updateRegister(1,localID,'i','iOrv')
-              state = response[0]
-              sensorName = response[1]
-              camType = response[3]
-              camIP = response[4]
-              if state == '1':
-                if camType == 'ipcam':
-                  msg = sensorName+' ['+localID+'] will send images from '+camType+' '+camIP+' on sensor trigger!!'
+              if validate_localID(localID):
+                response = updateRegister(1,localID,'i','iOrv')
+                state = response[0]
+                sensorName = response[1]
+                camType = response[3]
+                camIP = response[4]
+                if state == '1':
+                  if camType == 'ipcam':
+                    msg = sensorName+' ['+localID+'] will send images from '+camType+' '+camIP+' on sensor trigger!!'
+                  else:
+                    msg = sensorName+' ['+localID+'] will send images from '+camType+' on sensor trigger!!'
+                elif state == 'A':
+                  if camType == 'ipcam':
+                    msg = sensorName+' ['+localID+'] is already configured to send images from '+camType+' '+camIP+' on sensor trigger!!'
+                  else:
+                    msg = sensorName+' ['+localID+'] is already configured to send images from '+camType+' on sensor trigger!!'
+                elif state == '0':
+                  msg = 'Please confirm the ID and try again, you entered: \''+localID+'\' as your sensorID'
                 else:
-                  msg = sensorName+' ['+localID+'] will send images from '+camType+' on sensor trigger!!'
-              elif state == 'A':
-                if camType == 'ipcam':
-                  msg = sensorName+' ['+localID+'] is already configured to send images from '+camType+' '+camIP+' on sensor trigger!!'
-                else:
-                  msg = sensorName+' ['+localID+'] is already configured to send images from '+camType+' on sensor trigger!!'
-              elif state == '0':
-                msg = 'Please confirm the ID and try again, you entered: \''+localID+'\' as your sensorID'
+                  msg = 'Operation failed, please try again..'
               else:
-                msg = 'Operation failed, please try again..'
+                msg = 'Please provide a valid ID. The correct format is: \n\'/Use_media_video_localID\' or \n/Use_media_image_localID \nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
             else:
-              msg = 'Please specify either image or video and sensorID in your syntax. \n The correct syntax is \'/use_media_video_SensorID\' or \'/use_media_image_SensorID\''
+              msg = 'Please specify either image or video and sensor ID in your syntax. \n The correct format is \n\'/Use_media_video_localID\' or \n\'/Use_media_image_localID\' \nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
         elif '/set_videolength_' in commandL:
@@ -297,30 +321,33 @@ def action(msg):
               maxTime = 60
               lengthValid = validate_vid_length(length,minTime, maxTime)
               if lengthValid == True:
-                response = updateRegister(1,localID,str(length),'vidLength')
-                state = response[0]
-                sensorName = response[1]
-                vidLength = response[2]
-                camType = response[3]
-                camIP = response[4]
-                if state == '1':
-                  if camType.lower() == 'ipcam':
-                    msg = sensorName+' ['+localID+'] will send '+str(length)+' Sec videos from '+camType+' '+camIP+' on sensor trigger when video mode is selected!!'
+                if validate_localID(localID):
+                  response = updateRegister(1,localID,str(length),'vidLength')
+                  state = response[0]
+                  sensorName = response[1]
+                  vidLength = response[2]
+                  camType = response[3]
+                  camIP = response[4]
+                  if state == '1':
+                    if camType.lower() == 'ipcam':
+                      msg = sensorName+' ['+localID+'] will send '+str(length)+' Sec videos from '+camType+' '+camIP+' on sensor trigger when video mode is selected!!'
+                    else:
+                      msg = sensorName+' ['+localID+'] will send '+str(length)+' Sec videos from '+camType+' on sensor trigger when video mode is selected!!'
+                  elif state == 'A':
+                    if camType.lower() == 'ipcam':
+                      msg = sensorName+' ['+localID+'] is already configured to send '+str(length)+' Sec videos from '+camType+' '+camIP+' on sensor trigger if video mode is selected!!'
+                    else:
+                      msg = sensorName+' ['+localID+'] is already configured to send '+str(length)+' Sec videos from '+camType+' on sensor trigger if video mode is selected!!'
+                  elif state == '0':
+                    msg = 'That ID is not registered.Please confirm the ID and try again, you entered: \''+localID+'\' as your sensorID'
                   else:
-                    msg = sensorName+' ['+localID+'] will send '+str(length)+' Sec videos from '+camType+' on sensor trigger when video mode is selected!!'
-                elif state == 'A':
-                  if camType.lower() == 'ipcam':
-                    msg = sensorName+' ['+localID+'] is already configured to send '+str(length)+' Sec videos from '+camType+' '+camIP+' on sensor trigger if video mode is selected!!'
-                  else:
-                    msg = sensorName+' ['+localID+'] is already configured to send '+str(length)+' Sec videos from '+camType+' on sensor trigger if video mode is selected!!'
-                elif state == '0':
-                  msg = 'Please confirm the ID and try again, you entered: \''+localID+'\' as your sensorID'
+                    msg = 'Operation failed, please try again..'
                 else:
-                  msg = 'Operation failed, please try again..'
+                  msg = "Please provide a valid ID. \nThe correct format is: \n\n\'/Set_videolength_seconds_localID\' \n\nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
               else:
-                msg = 'Please enter a valid number between '+str(minTime)+' and '+str(maxTime)+' as the video length.\nThe correct syntax is: \n\'/set_videolength_seconds_SensorID\''
+                msg = 'Please enter a valid number between '+str(minTime)+' and '+str(maxTime)+' as the video length.\nThe correct format is: \n\n\'/Set_videolength_seconds_localID\' \n\nWhere \'seconds\' is the video length in seconds and \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
             else:
-              msg = 'Use the correct syntax and try again. \nThe correct syntax is \'/Set_videolength_seconds_SensorID\''
+              msg = 'Use the correct syntax and try again. \nThe correct format is: \n\n\'/Set_videolength_seconds_localID\' \n\nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
         elif '/use_camera_' in commandL:
@@ -332,47 +359,50 @@ def action(msg):
               print e
               error = 1
             if error == 0:
-              if cam == 'ipcam':
-                try:
-                  ipAddr = commandS[4]
-                  error = 0
-                except Exception as e:
-                  print e
-                  error = 1
-                if error == 0:
-                  validIP = validate_ip(ipAddr)
-                  if validIP == True:
-                    response = updateRegister(2,localID,cam,'camType',ipAddr,'camIP')
-                    state = response[0]
-                    sensorName = response[1]
-                    if state == '1':
-                      msg = sensorName+' ['+localID+'] will use '+cam+' '+ipAddr+' for videos and images'
-                    elif state == 'A':
-                      msg = sensorName+' ['+localID+'] is already configured to use '+cam+' '+ipAddr+' for videos and images'
-                    elif state == '0':
-                      msg = localID+' isn\'t registered, please confirm the ID and try again..'
+              if validate_localID(localID):
+                if cam == 'ipcam':
+                  try:
+                    ipAddr = commandS[4]
+                    error = 0
+                  except Exception as e:
+                    print e
+                    error = 1
+                  if error == 0:
+                    validIP = validate_ip(ipAddr)
+                    if validIP == True:
+                      response = updateRegister(2,localID,cam,'camType',ipAddr,'camIP')
+                      state = response[0]
+                      sensorName = response[1]
+                      if state == '1':
+                        msg = sensorName+' ['+localID+'] will use '+cam+' '+ipAddr+' for videos and images'
+                      elif state == 'A':
+                        msg = sensorName+' ['+localID+'] is already configured to use '+cam+' '+ipAddr+' for videos and images'
+                      elif state == '0':
+                        msg = localID+' isn\'t registered, please confirm the ID and try again..'
+                      else:
+                        msg = 'Operation failed, please try again..'
                     else:
-                      msg = 'Operation failed, please try again..'
+                      msg = 'You have entered an invalid IP Address \''+str(ipAddr)+'\', check the IP Address and try again..'
                   else:
-                    msg = 'You have entered an invalid IP Address \''+str(ipAddr)+'\', check the IP Address and try again..'
+                    msg = 'Please provide an IP address. The correct format is: \n\n\'/Use_camera_cameratype_localID_ipaddress\''
+                elif cam == 'usbcam' or cam == 'picam':
+                  response = updateRegister(1,localID,cam,'camType')
+                  state = response[0]
+                  sensorName = response[1]
+                  if state == '1':
+                    msg = sensorName+' ['+localID+'] will use '+cam+' for videos and images'
+                  elif state == 'A':
+                    msg = sensorName+' ['+localID+'] is already configured to use '+cam+' for videos and images'
+                  elif state == '0':
+                    msg = localID+' isn\'t registered, please confirm the ID and try again..'
+                  else:
+                    msg = 'Operation failed, please try again..'
                 else:
-                  msg = 'Please provide an IP address. The correct syntax is: \n\'/Use_camera_cameratype_SensorID_ipaddress\''
-              elif cam == 'usbcam' or cam == 'picam':
-                response = updateRegister(1,localID,cam,'camType')
-                state = response[0]
-                sensorName = response[1]
-                if state == '1':
-                  msg = sensorName+' ['+localID+'] will use '+cam+' for videos and images'
-                elif state == 'A':
-                  msg = sensorName+' ['+localID+'] is already configured to use '+cam+' for videos and images'
-                elif state == '0':
-                  msg = localID+' isn\'t registered, please confirm the ID and try again..'
-                else:
-                  msg = 'Operation failed, please try again..'
+                  msg = 'Please enter a valid camera type. \nThe correct format is: \n\n\'/Use_camera_cameratype_localID_ipaddress\' \n\nWhere cameratype is either: usbcam, picam or ipcam.\nIf camera type is ipcam you have to type its ip address in the ipaddress section.\n\'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
               else:
-                msg = 'Please enter a valid camera type. \nThe correct syntax is \'/Use_camera_cameratype_SensorID_ipaddress\' \nWhere cameratype is either: usbcam, picam or ipcam.\nIf camera type is ipcam you have to type its ip address in the ipaddress section.'
+                msg = "Please provide a valid ID.  \nThe correct format is: \n\n'/Use_camera_cameratype_localID_ipaddress' \n\nWhere cameratype is either: usbcam, picam or ipcam.\nIf camera type is ipcam you have to type its ip address in the ipaddress section.\n'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
             else:
-              msg = 'Please use the correct syntax and try again. \nThe correct syntax is \'/Use_camera_cameratype_SensorID_ipaddress\' \nWhere cameratype is either: usbcam, picam or ipcam.\nIf camera type is ipcam you have to type its ip address in the ipaddress section.'
+              msg = 'Please use the correct syntax and try again. \nThe correct format is: \n\n\'/Use_camera_cameratype_localID_ipaddress\' \n\nWhere cameratype is either: usbcam, picam or ipcam.\nIf camera type is ipcam you have to type its ip address in the ipaddress section.\n\'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
         elif '/capture_' in commandL:
@@ -398,7 +428,7 @@ def action(msg):
                   if lengthValid == True:
                     if camType.lower() == 'ipcam':
                       try:
-                        ipAddr = commandS[3]
+                        ipAddr = commandS[4]
                         error = 0
                       except Exception as e:
                         print e
@@ -410,7 +440,7 @@ def action(msg):
                         else:
                           msg = 'Please provide a valid IP Address. \''+str(ipAddr)+'\' is not a valid ip address.'
                       else:
-                        msg = 'Please provide an IP Address. The correct syntax is \'/Capture_media_cameratype_seconds_ipaddress\' where media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
+                        msg = 'Please provide an IP Address. The correct format is: \n\n\'/Capture_media_cameratype_seconds_ipaddress\' \n\nWhere media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
                     elif camType.lower() == 'usbcam':
                       telegram_bot.sendMessage(chat_id, str("Attempting to capture "+str(seconds)+" Sec video from USB camera.."))
                       output = subprocess.call(["sudo", "rm", "/home/pi/Watchman/Videos/usb1camvid.avi"])
@@ -432,11 +462,11 @@ def action(msg):
                       else:
                         telegram_bot.sendMessage(chat_id, str("Video capture from Raspberry Pi camera unsuccessful, please ensure pi camera is installed properly and retry."))
                     else:
-                      msg = 'Please select the right camera type. The correct syntax is \'/Capture_media_cameratype_seconds_ipaddress\' where media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
+                      msg = 'Please select the right camera type. The correct format is: \n\n\'/Capture_media_cameratype_seconds_ipaddress\' \n\nWhere media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
                   else:
-                    msg = 'Please enter a valid number between '+str(minTime)+' and '+str(maxTime)+' as the video length. The correct syntax is \'/Capture_media_cameratype_seconds_ipaddress\' where media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
+                    msg = 'Please enter a valid number between '+str(minTime)+' and '+str(maxTime)+' as the video length. The correct format is: \n\n\'/Capture_media_cameratype_seconds_ipaddress\' \n\nWhere media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
                 else:
-                  msg = 'Please specify a camera type and the number of seconds you want for video. The correct syntax is \'/Capture_media_cameratype_seconds_ipaddress\' where media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
+                  msg = 'Please specify a camera type and the number of seconds you want for video. The correct format is: \n\n\'/Capture_media_cameratype_seconds_ipaddress\' \n\nWhere media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
               elif media.lower() == 'image':
                 if camType.lower() == 'ipcam':
                   try:
@@ -452,7 +482,7 @@ def action(msg):
                     else:
                       msg = 'Please provide a valid IP Address. \''+str(ipAddr)+'\' is not a valid ip address.'
                   else:
-                    msg = 'Please provide an IP Address. The correct syntax is \'/Capture_media_cameratype_seconds_ipaddress\' where media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
+                    msg = 'Please provide an IP Address. The correct format is: \n\n\'/Capture_media_cameratype_seconds_ipaddress\' \n\nWhere media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
                 elif camType.lower() == 'usbcam':
                   telegram_bot.sendMessage(chat_id, str("Attempting to capture a photo from USB camera.."))
                   output = subprocess.call(["sudo", "rm", "/home/pi/Watchman/Images/usb1camimg.jpg"])
@@ -474,12 +504,12 @@ def action(msg):
                   else:
                     telegram_bot.sendMessage(chat_id, str("Photo capture from Raspberry Pi camera unsuccessful, please ensure pi camera is installed properly and retry."))
                 else:
-                  msg = 'Please select the right camera type. The correct syntax is \'/Capture_media_cameratype_seconds_ipaddress\' where media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
+                  msg = 'Please select the right camera type. The correct format is: \n\n\'/Capture_media_cameratype_seconds_ipaddress\' \n\nWhere media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
                 pass
               else:
-                msg = 'You have entered an invalid media type, please type video or image as media type. The correct syntax is \'/Capture_media_cameratype_seconds_ipaddress\' where media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
+                msg = 'You have entered an invalid media type, please type video or image as media type. The correct format is: \n\n\'/Capture_media_cameratype_seconds_ipaddress\' \n\nWhere media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
             else:
-              msg = 'Please provide media type you want to capture and camera type. The correct syntax is \'/Capture_media_cameratype_seconds_ipaddress\' where media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
+              msg = 'Please provide media type you want to capture and camera type. The correct format is: \n\n\'/Capture_media_cameratype_seconds_ipaddress\' \n\nWhere media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
         elif '/register_sensor_' in commandL:
@@ -516,15 +546,15 @@ def action(msg):
                        else:
                          msg = 'nodeID should be the same number as the digit part of localID. e.g. if sensor address is VIB255-234567, localID is VIB255, nodeID should be typed as 255.'
                      else:
-                       msg = 'Please provide a short description or name to identify your sensor. The correct syntax is: \n\'/Register_sensor_nodeID_localID_globalID_description\'. Where \'nodeID\' is the number in localID address e.g sensor address VIB001-234567 will have nodeID 1. \'localID\' is the first part of sensor address e.g VIB001. \'globalID\' is the second part of your sensor address e.g 234567. \'description \' is the name or description you give to identify your sensor e.g Front door vibration sensor'
+                       msg = 'Please provide a short description or name to identify your sensor. The correct format is: \n\n\'/Register_sensor_nodeID_localID_globalID_description\' \n\nWhere \'nodeID\' is the number in localID address e.g sensor address VIB001-234567 will have nodeID 1. \'localID\' is the first part of sensor address e.g VIB001. \'globalID\' is the second part of your sensor address e.g 234567. \'description \' is the name or description you give to identify your sensor e.g Front door vibration sensor'
                    else:
-                     msg = 'Please type the correct globalID. If your sensor address is VIB001-234567 the globalID is 234567. The correct syntax is: \n\'/Register_sensor_nodeID_localID_globalID_description\'. Where \'nodeID\' is the number in localID address e.g sensor address VIB001-234567 will have nodeID 1. \'localID\' is the first part of sensor address e.g VIB001. \'globalID\' is the second part of your sensor address e.g 234567. \'description \' is the name or description you give to identify your sensor e.g Front door vibration sensor'
+                     msg = 'Please type the correct globalID. If your sensor address is VIB001-234567 the globalID is 234567. The correct format is: \n\n\'/Register_sensor_nodeID_localID_globalID_description\' \n\nWhere \'nodeID\' is the number in localID address e.g sensor address VIB001-234567 will have nodeID 1. \'localID\' is the first part of sensor address e.g VIB001. \'globalID\' is the second part of your sensor address e.g 234567. \'description \' is the name or description you give to identify your sensor e.g Front door vibration sensor'
                  else:
-                   msg = 'Please type the correct localID. If your sensor address is VIB001-234567 the localID is VIB001. The correct syntax is: \n\'/Register_sensor_nodeID_localID_globalID_description\'. Where \'nodeID\' is the number in localID address e.g sensor address VIB001-234567 will have nodeID 1. \'localID\' is the first part of sensor address e.g VIB001. \'globalID\' is the second part of your sensor address e.g 234567. \'description \' is the name or description you give to identify your sensor e.g Front door vibration sensor'
+                   msg = 'Please type the correct localID. If your sensor address is VIB001-234567 the localID is VIB001. The correct format is: \n\n\'/Register_sensor_nodeID_localID_globalID_description\' \n\nWhere \'nodeID\' is the number in localID address e.g sensor address VIB001-234567 will have nodeID 1. \'localID\' is the first part of sensor address e.g VIB001. \'globalID\' is the second part of your sensor address e.g 234567. \'description \' is the name or description you give to identify your sensor e.g Front door vibration sensor'
               else:
-                msg = 'Please type the correct nodeID, it should be a number between 1 and 255. The correct syntax is: \n\'/Register_sensor_nodeID_localID_globalID_description\'. Where \'nodeID\' is the number in localID address e.g sensor address VIB001-234567 will have nodeID 1. \'localID\' is the first part of sensor address e.g VIB001. \'globalID\' is the second part of your sensor address e.g 234567. \'description \' is the name or description you give to identify your sensor e.g Front door vibration sensor.'
+                msg = 'Please type the correct nodeID, it should be a number between 1 and 255. The correct format is: \n\n\'/Register_sensor_nodeID_localID_globalID_description\' \n\nWhere \'nodeID\' is the number in localID address e.g sensor address VIB001-234567 will have nodeID 1. \'localID\' is the first part of sensor address e.g VIB001. \'globalID\' is the second part of your sensor address e.g 234567. \'description \' is the name or description you give to identify your sensor e.g Front door vibration sensor.'
             else:
-              msg = 'Sensor registration failed. Please use the correct syntax and fill in every section. The correct syntax is: \n\'/Register_sensor_nodeID_localID_globalID_description\'. Where \'nodeID\' is the number in localID address e.g sensor address VIB001-234567 will have nodeID 1. \'localID\' is the first part of sensor address e.g VIB001. \'globalID\' is the second part of your sensor address e.g 234567. \'description \' is the name or description you give to identify your sensor e.g Front door vibration sensor'
+              msg = 'Sensor registration failed. Please use the correct format and fill in every section. The correct format is: \n\n\'/Register_sensor_nodeID_localID_globalID_description\' \n\nWhere \'nodeID\' is the number in localID address e.g sensor address VIB001-234567 will have nodeID 1. \'localID\' is the first part of sensor address e.g VIB001. \'globalID\' is the second part of your sensor address e.g 234567. \'description \' is the name or description you give to identify your sensor e.g Front door vibration sensor'
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
         elif '/remove_sensor_' in commandL:
@@ -549,7 +579,7 @@ def action(msg):
                       if rowCount >= 1:
                         msg = sensorName+'['+localID+'] has been deleted'
                       else:
-                        msg = 'Operation failed, please try again. The correct syntax is \'/Remove_sensor_localID\' where \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
+                        msg = 'Operation failed, please try again. The correct format is: \n\'/Remove_sensor_localID\' \nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
                     except mariadb.Error as error:
                       print("Error: {}".format(error))
                       msg = 'Database error occurred. Please retry later.'
@@ -560,9 +590,72 @@ def action(msg):
                 msg = 'Database error occurred. Please retry later.'
               mariadb_connection.close()
             else:
-              msg = 'Please type in a valid ID. The correct syntax is \'/Remove_sensor_localID\' where \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
+              msg = 'Please type in a valid ID. The correct format is: \n\'/Remove_sensor_localID\' \nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
+        elif '/show_configuration_' in commandL:
+            localID = commandS[2]
+            if validate_localID(localID):
+              mariadb_connection = mariadb.connect(user='watch', password='mawe',database='watchman')
+              cursor1 = mariadb_connection.cursor()
+              try:
+                cursor1.execute("SELECT * FROM registeredSensors WHERE localID = '%s'"%(localID))
+                result = cursor1.fetchall()
+                rowCount = len(result)
+                cursor1.close()
+                if rowCount >= 1:
+                  for row in result:
+                    sensorName = row[1]
+                    localID = row[2]
+                    active = row[4]
+                    lastSeen = row[5]
+                    camType = row[7]
+                    camIP = row[8]
+                    media = row[9]
+                    vidLength = row[10]
+                    sendAlert = row[11]
+                    sendSms = row[12]
+                    useCam = row[13]
+                    def checkActive(active):
+                      if active != None:
+                        if active == 1:
+                          return 'Active'
+                        else:
+                          return 'Inactive'
+                      else:
+                        return 'Unknown'
+                    def returnYesOrNo(alert):
+                      if alert == 1:
+                        return 'Yes'
+                      else:
+                        return 'No'
+                    def checkMedia(media):
+                      if media == 'i':
+                        return 'Photo'
+                      elif media == 'v':
+                        return 'Video'
+                      else:
+                        return 'Unspecified'
+                    def checkLastSeen(lastSeen):
+                      if lastSeen != None:
+                        return str(lastSeen)
+                      else:
+                        return 'Unknown'
+                    def checkCamTypeOrIP(camTypeIP):
+                      if camTypeIP != None:
+                        return camTypeIP
+                      else:
+                        return 'Not specified'
+                    msg = sensorName+"["+localID+"] \nconfiguration: \n\nStatus: "+checkActive(active)+" \n\nLast Seen :"+checkLastSeen(lastSeen)+" \n\nSend alert on trigger: "+returnYesOrNo(sendAlert)+" \n\nSend SMS alerts: "+returnYesOrNo(sendSms)+" \n\nSend media on trigger: "+returnYesOrNo(useCam)+" \n\nUse camera type: "+checkCamTypeOrIP(camType)+"\n\nIP Camera address: "+checkCamTypeOrIP(camIP)+" \n\nUse media: "+checkMedia(media)+" \n\nVideo length for video mode: "+str(vidLength)
+                else:
+                  msg = 'There is no sensor registered as \''+localID+'\'.'
+              except mariadb.Error as error:
+                print("Error: {}".format(error))
+                msg = 'Database error occurred. Please retry later.'
+              mariadb_connection.close()
+            else:
+              msg = 'Please type a valid ID. The correct format is: \n\'/Show_configuration_localID\' \nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
+            telegram_bot.sendMessage(chat_id, str(msg))
         elif '/show_registered_sensors' in commandL:
             mariadb_connection = mariadb.connect(user='watch', password='mawe',database='watchman')
             cursor1 = mariadb_connection.cursor()
