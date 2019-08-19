@@ -11,15 +11,15 @@ blueLed = 15
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(blueLed, GPIO.OUT, initial = 0)
 nodeID = sys.argv[1]
-event = sys.argv[2]
+msgType = sys.argv[2]
 authorizeVibMsg = 0
 sensorMsg = ' '
 
 ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
 
-if event == 'V':
+if msgType == 'V':
   print '['+ts+'] Vibration detected!!'
-elif event == 'M':
+elif msgType == 'M':
   print '['+ts+'] Motion detected!!'
 else:
   print '['+ts+'] Sensor alert detected!!'
@@ -33,6 +33,7 @@ try:
   for row in result:
     mediaOption = row[9]
     sendAlert = row[11]
+    sendSms = row[12]
     vidLength = row[10]
     localID = row[2]
     sensorName = row[1]
@@ -47,10 +48,10 @@ mariadb_connection.close()
 if sendAlert == 1:
   ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
   ms = datetime.now().strftime("%H:%M:%S")
-  if event == 'V':
+  if msgType == 'V':
     sensorMsg = sensorName+' ['+localID+'] reports vibration detected at '+ms
     pass
-  elif event == 'M':
+  elif msgType == 'M':
     sensorMsg = sensorName+' ['+localID+'] reports motion detected at '+ms
     pass
   else:
@@ -59,7 +60,7 @@ if sendAlert == 1:
   vpath = ' '
   #send message to telegram user
   print 'Sending message to Telegram..'
-  output = subprocess.Popen(["sudo", "/home/pi/Watchman/TelegramBot/TelegramSendMsg.py", sensorMsg])
+  output = subprocess.Popen(["sudo", "/home/pi/Watchman/TelegramBot/TelegramSendMsg.py", sensorMsg, str(sendSms)])
   if useCam == 1:
     if mediaOption == 'i':
       if camType == 'usbcam':

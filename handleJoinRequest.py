@@ -3,7 +3,11 @@ import sys
 import os
 import mysql.connector as mariadb
 import MySQLdb
+import RPi.GPIO as GPIO
 
+blueLed = 15
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(blueLed, GPIO.OUT, initial = 0)
 nodeID = sys.argv[1]
 uniqueID = 0
 mariadb_connection = mariadb.connect(user='watch', password='mawe',database='watchman')
@@ -20,3 +24,5 @@ except mariadb.Error as error:
   print("Error: {}".format(error))
 
 mariadb_connection.close()
+GPIO.output(blueLed,GPIO.LOW)
+GPIO.cleanup()

@@ -33,24 +33,26 @@ def checkUARTSerial(channel):
           switchLed('blue',1)
           subprocess.Popen(['sudo','/home/pi/Watchman/handleJoinRequest.py',nodeID])
           pass
+        #r for resetting active devices database
+        elif event == 'r':
+          subprocess.Popen(['sudo','/home/pi/Watchman/resetActiveDeviceDB.py'])
+          pass
         #U for update, we update registeredSensors table alive column and last seen column if sensor is found to be responsive or dead
         elif event == 'U':
           subprocess.Popen(['sudo','/home/pi/Watchman/handleUpdateEvents.py',nodeID,msg])
           pass
         #V for events from vibration sensor
-        elif event == 'V':
+        elif event == 'A':
           switchLed('blue',1)
-          subprocess.Popen(['sudo','/home/pi/Watchman/handleAlertEvent.py',nodeID,event])
-          pass
-        #M for events from motion sensor
-        elif event == 'M':
-          switchLed('blue',1)
-          subprocess.Popen(['sudo','/home/pi/Watchman/handleAlertEvent.py',nodeID,event])
+          subprocess.Popen(['sudo','/home/pi/Watchman/handleAlertEvent.py',nodeID,msgType])
           pass
         pass
       #if event comes from SIM800L device
       elif device == 'G':
         switchLed('green',1)
+        event = splitMsg[1]
+        msg = splitMsg[5]
+        subprocess.Popen(['sudo','/home/pi/Watchman/handleSim800lTEvent.py',event,msg])
         pass
   switchLed('red',0)
 
