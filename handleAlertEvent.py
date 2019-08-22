@@ -39,6 +39,7 @@ try:
     sensorName = row[1]
     camType = row[7]
     useCam = row[13]
+    camIP = row[8]
   cursor.close()
 except mariadb.Error as error:
   print("Error: {}".format(error))
@@ -78,7 +79,11 @@ if sendAlert == 1:
         output = subprocess.call(["sudo", "/home/pi/Watchman/Images/takePiCamImg.sh", ipath])
         pass
       elif camType == 'ipcam':
-
+        ipImgPath = '/home/pi/Pictures/IpCam/'
+        ipImgName = 'Ip-Cam['+ts+'].jpg'
+        ipath = ipImgPath+ipImgName
+        #take image from pi-camera
+        output = subprocess.call(["sudo", "/home/pi/Watchman/Images/takeIpCamImg.sh", ipath, str(camIP)])
         pass
       #send image to telegram user
       print 'Sending image to Telegram..'
@@ -99,7 +104,11 @@ if sendAlert == 1:
         output = subprocess.call(["sudo", "/home/pi/Watchman/Videos/takePiCamVid.sh", vpath, str(vidLength*1000)])
         pass
       elif camType == 'ipcam':
-
+        ipVidPath = '/home/pi/Videos/IpCam/'
+        ipVidName = 'Ip-Cam['+ts+'].mp4'
+        vpath = ipVidPath+ipVidName
+        #take video from pi-camera
+        output = subprocess.call(["sudo", "/home/pi/Watchman/Videos/takeIpCamVid.sh", vpath, str(vidLength) ,str(camIP)])
         pass
       #send video to telegram user
       print 'Sending video to Telegram..'

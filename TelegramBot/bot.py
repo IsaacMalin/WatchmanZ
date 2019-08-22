@@ -436,7 +436,15 @@ def action(msg):
                       if error == 0:
                         validIP = validate_ip(ipAddr)
                         if validIP == True:
-                          telegram_bot.sendMessage(chat_id, str("Attempting to capture "+str(seconds)+" Sec video from ipcam "+str(ipAddr)))
+                          telegram_bot.sendMessage(chat_id, str("Attempting to capture "+str(seconds)+" Sec video from IP camera - "+str(ipAddr)))
+                          output = subprocess.call(["sudo", "rm", "/home/pi/Watchman/Videos/ipcamvid.mp4"])
+                          output = subprocess.call(["sudo", "/home/pi/Watchman/Videos/takeIpCamVid.sh", "/home/pi/Watchman/Videos/ipcamvid.mp4", str(int(seconds)), str(ipAddr)])
+                          fileExists = os.path.exists('/home/pi/Watchman/Videos/ipcamvid.mp4')
+                          if fileExists == True:
+                            telegram_bot.sendMessage(chat_id, str("Captured "+str(seconds)+" Sec video from IP camera - "+str(ipAddr)+", trying to send video.."))
+                            telegram_bot.sendVideo (chat_id, video=open('/home/pi/Watchman/Videos/ipcamvid.mp4'))
+                          else:
+                            telegram_bot.sendMessage(chat_id, str("Video capture from IP camera - "+str(ipAddr)+" unsuccessful, please ensure ip camera is functioning and retry."))
                         else:
                           msg = 'Please provide a valid IP Address. \''+str(ipAddr)+'\' is not a valid ip address.'
                       else:
@@ -478,7 +486,15 @@ def action(msg):
                   if error == 0:
                     validIP = validate_ip(ipAddr)
                     if validIP == True:
-                      telegram_bot.sendMessage(chat_id, str("Attempting to capture an image from ipcam "+str(ipAddr)))
+                      telegram_bot.sendMessage(chat_id, str("Attempting to capture a photo from IP camera - "+str(ipAddr)))
+                      output = subprocess.call(["sudo", "rm", "/home/pi/Watchman/Images/ipcamimg.jpg"])
+                      output = subprocess.call(["sudo", "/home/pi/Watchman/Images/takeIpCamImg.sh", "/home/pi/Watchman/Images/ipcamimg.jpg", str(ipAddr)])
+                      fileExists = os.path.exists('/home/pi/Watchman/Images/ipcamimg.jpg')
+                      if fileExists == True:
+                        telegram_bot.sendMessage(chat_id, str("Photo captured! trying to send it.."))
+                        telegram_bot.sendPhoto (chat_id, photo=open('/home/pi/Watchman/Images/ipcamimg.jpg'))
+                      else:
+                        telegram_bot.sendMessage(chat_id, str("Photo capture from IP camera - "+str(ipAddr)+" unsuccessful, please ensure IP camera is functioning and retry."))
                     else:
                       msg = 'Please provide a valid IP Address. \''+str(ipAddr)+'\' is not a valid ip address.'
                   else:
