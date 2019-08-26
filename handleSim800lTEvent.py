@@ -15,6 +15,12 @@ if event == 'S': #if we get any sms msg through Sim800lT which isnt from admin, 
   msg = "SMS from GSM Module: ["+msg+"]"
   output = subprocess.Popen(["sudo", "/home/pi/Watchman/TelegramBot/TelegramSendMsg.py", msg, '1'])
 
+elif event == 'I':
+  print 'updating immediateMsg.txt with new message from stm32..'
+  c = open("/home/pi/Watchman/AudioMsgs/immediateMsg.txt","w+")
+  c.write(msg)
+  c.close()
+
 else:
   print 'fowarding gsm module message to Telegram..'
   msg = "Message from GSM Module: ["+msg+"]"

@@ -22,7 +22,8 @@ serial = serial.Serial(
 )
 
 #construct message
-msg = "+"+device+"#"+data+"#"+arg1+"#"+arg2+"#"+arg3+"#"+arg4
+msg = "+"+device+"^"+data+"^"+arg1+"^"+arg2+"^"+arg3+"^"+arg4
 print msg+" sent to STM32"
 
-serial.write(msg);
+serial.write(msg)
+serial.close()

@@ -16,7 +16,8 @@ serial = serial.Serial(
 )
 
 #construct message
-msg = "+G#"+sms
-serial.write(msg);
+msg = "+G^"+sms
+serial.write(msg)
+serial.close()
 print "msg fowarded to STM32.."
 
