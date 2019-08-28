@@ -10,5 +10,9 @@ s = open("/home/pi/Watchman/checkEvents.txt","w+")
 status = s.write('0')
 s.close()
 
+m = open("/home/pi/Watchman/mqtt/mqttSub.txt","w+")
+status = m.write('0')
+m.close()
+
 ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
 print 'Initialized sensor and bot variables on '+ts

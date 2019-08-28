@@ -8,7 +8,7 @@ mariadb_connection = mariadb.connect(user='watch', password='mawe',database='wat
 cursor = mariadb_connection.cursor()
 
 try:
-  cursor.execute("UPDATE registeredSensors SET active = '0'")
+  cursor.execute("UPDATE registeredNRFSensors SET active = '0'")
   cursor.close()
 except mariadb.Error as error:
   print("Error: {}".format(error))

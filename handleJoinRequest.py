@@ -14,7 +14,7 @@ mariadb_connection = mariadb.connect(user='watch', password='mawe',database='wat
 cursor = mariadb_connection.cursor()
 
 try:
-  cursor.execute("SELECT * FROM registeredSensors WHERE nodeID = "+nodeID)
+  cursor.execute("SELECT * FROM registeredNRFSensors WHERE nodeID = "+nodeID)
   result = cursor.fetchall()
   for row in result:
     uniqueID = row[3]

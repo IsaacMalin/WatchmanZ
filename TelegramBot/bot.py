@@ -17,9 +17,9 @@ def updateRegister(numOfValues,localID,value1,column1,value2=None,column2=None,v
   cursor1 = mariadb_connection.cursor()
   try:
     if numOfValues == 0:
-      cursor1.execute("SELECT * FROM registeredSensors")
+      cursor1.execute("SELECT * FROM registeredNRFSensors")
     else:
-      cursor1.execute("SELECT * FROM registeredSensors WHERE localID = '%s'"%(str(localID)))
+      cursor1.execute("SELECT * FROM registeredNRFSensors WHERE localID = '%s'"%(str(localID)))
     result = cursor1.fetchall()
     rowCount = len(result)
     cursor1.close()
@@ -33,15 +33,15 @@ def updateRegister(numOfValues,localID,value1,column1,value2=None,column2=None,v
         cursor2 = mariadb_connection.cursor()
         try:
           if numOfValues == 1:
-            cursor2.execute("UPDATE registeredSensors SET %s = '%s' WHERE localID = '%s'"%(str(column1),str(value1),str(localID)))
+            cursor2.execute("UPDATE registeredNRFSensors SET %s = '%s' WHERE localID = '%s'"%(str(column1),str(value1),str(localID)))
           elif numOfValues == 2:
-            cursor2.execute("UPDATE registeredSensors SET %s = '%s', %s = '%s' WHERE localID = '%s'"%(str(column1),str(value1),str(column2),str(value2),str(localID)))
+            cursor2.execute("UPDATE registeredNRFSensors SET %s = '%s', %s = '%s' WHERE localID = '%s'"%(str(column1),str(value1),str(column2),str(value2),str(localID)))
           elif numOfValues == 3:
-            cursor2.execute("UPDATE registeredSensors SET %s = '%s', %s = '%s', %s = '%s' WHERE localID = '%s'"%(str(column1),str(value1),str(column2),str(value2),str(column3),str(value3),str(localID)))
+            cursor2.execute("UPDATE registeredNRFSensors SET %s = '%s', %s = '%s', %s = '%s' WHERE localID = '%s'"%(str(column1),str(value1),str(column2),str(value2),str(column3),str(value3),str(localID)))
           elif numOfValues == 4:
-            cursor2.execute("UPDATE registeredSensors SET %s = '%s', %s = '%s', %s = '%s', %s = '%s' WHERE localID = '%s'"%(str(column1),str(value1),str(column2),str(value2),str(column3),str(value3),str(column4),str(value4),str(localID)))
+            cursor2.execute("UPDATE registeredNRFSensors SET %s = '%s', %s = '%s', %s = '%s', %s = '%s' WHERE localID = '%s'"%(str(column1),str(value1),str(column2),str(value2),str(column3),str(value3),str(column4),str(value4),str(localID)))
           elif numOfValues == 0:
-            cursor2.execute("UPDATE registeredSensors SET %s = '%s'"%(str(column1),str(value1)))
+            cursor2.execute("UPDATE registeredNRFSensors SET %s = '%s'"%(str(column1),str(value1)))
           else:
             return '0','0','0','0','0'
           rowCount = cursor2.rowcount
@@ -547,7 +547,7 @@ def action(msg):
                          mariadb_connection = mariadb.connect(user='watch', password='mawe',database='watchman')
                          cursor1 = mariadb_connection.cursor()
                          try:
-                           cursor1.execute("INSERT INTO registeredSensors (nodeID,sensorName,localID,globalID,regDate) VALUES(%s,'%s','%s',%s,'%s')"%(str(nodeID),str(description),str(localID),str(uniqueID),str(regTime)))
+                           cursor1.execute("INSERT INTO registeredNRFSensors (nodeID,sensorName,localID,globalID,regDate) VALUES(%s,'%s','%s',%s,'%s')"%(str(nodeID),str(description),str(localID),str(uniqueID),str(regTime)))
                            rowCount = cursor1.rowcount
                            cursor1.close()
                            mariadb_connection.commit()
@@ -579,7 +579,7 @@ def action(msg):
               mariadb_connection = mariadb.connect(user='watch', password='mawe',database='watchman')
               cursor1 = mariadb_connection.cursor()
               try:
-                cursor1.execute("SELECT * FROM registeredSensors WHERE localID = '%s'"%(localID))
+                cursor1.execute("SELECT * FROM registeredNRFSensors WHERE localID = '%s'"%(localID))
                 result = cursor1.fetchall()
                 rowCount = len(result)
                 cursor1.close()
@@ -588,7 +588,7 @@ def action(msg):
                     sensorName = row[1]
                     cursor2 = mariadb_connection.cursor()
                     try:
-                      cursor2.execute("DELETE FROM registeredSensors WHERE localID = '%s'"%(localID))
+                      cursor2.execute("DELETE FROM registeredNRFSensors WHERE localID = '%s'"%(localID))
                       rowCount = cursor2.rowcount
                       cursor2.close()
                       mariadb_connection.commit()
@@ -615,7 +615,7 @@ def action(msg):
               mariadb_connection = mariadb.connect(user='watch', password='mawe',database='watchman')
               cursor1 = mariadb_connection.cursor()
               try:
-                cursor1.execute("SELECT * FROM registeredSensors WHERE localID = '%s'"%(localID))
+                cursor1.execute("SELECT * FROM registeredNRFSensors WHERE localID = '%s'"%(localID))
                 result = cursor1.fetchall()
                 rowCount = len(result)
                 cursor1.close()
@@ -676,7 +676,7 @@ def action(msg):
             mariadb_connection = mariadb.connect(user='watch', password='mawe',database='watchman')
             cursor1 = mariadb_connection.cursor()
             try:
-              cursor1.execute("SELECT * FROM registeredSensors")
+              cursor1.execute("SELECT * FROM registeredNRFSensors")
               result = cursor1.fetchall()
               rowCount = len(result)
               cursor1.close()

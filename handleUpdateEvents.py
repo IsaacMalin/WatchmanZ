@@ -14,7 +14,7 @@ mariadb_connection = mariadb.connect(user='watch', password='mawe',database='wat
 cursor = mariadb_connection.cursor()
 
 try:
-  cursor.execute("UPDATE registeredSensors SET active = '%s', lastSeen = '%s' WHERE nodeID = '%s'"%(state,time,nodeID))
+  cursor.execute("UPDATE registeredNRFSensors SET active = '%s', lastSeen = '%s' WHERE nodeID = '%s'"%(state,time,nodeID))
   cursor.close()
 except mariadb.Error as error:
   print("Error: {}".format(error))
