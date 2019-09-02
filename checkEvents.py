@@ -42,7 +42,7 @@ def checkUARTSerial(channel):
           pass
         #U for update, we update registeredSensors table alive column and last seen column if sensor is found to be responsive or dead
         elif event == 'U':
-          subprocess.Popen(['sudo','/home/pi/Watchman/handleUpdateEvents.py',nodeID,msg])
+          subprocess.Popen(['sudo','/home/pi/Watchman/handleUpdateEvents.py',nodeID,msg,analogMsg])
           pass
         #V for events from vibration sensor
         elif event == 'A':

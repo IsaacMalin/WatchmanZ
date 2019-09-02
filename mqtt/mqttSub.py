@@ -14,7 +14,10 @@ def on_message(client, userdata, message):
     print("message qos=",qos)
     print("message retain flag=",retainFlag)
     if topic == 'sensorMessage':
-      subprocess.Popen(['sudo','/home/pi/Watchman/mqtt/handleSensorMsgs.py',msg])
+      subprocess.Popen(['sudo','/home/pi/Watchman/mqtt/handleMqttMsgs.py',msg])
+      pass
+    elif topic == 'sensorUpdates':
+      subprocess.Popen(['sudo','/home/pi/Watchman/mqtt/handleMqttSensorUpdates.py',msg])
       pass
     elif topic == 'sensorStatus':
       subprocess.Popen(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendMsg.py',msg,'0'])
@@ -40,9 +43,10 @@ try:
   client.connect(broker_address) #connect to broker
   client.loop_start() #start the loop
   #subscribe to interesting topics..
-  print("Subscribing to topic","sensorStatus","sensorMessage")
+  print("Subscribing to topic","sensorStatus","sensorMessage","sensorUpdates")
   client.subscribe("sensorStatus")
   client.subscribe("sensorMessage")
+  client.subscribe("sensorUpdates")
 
   c = open("/home/pi/Watchman/mqtt/mqttSub.txt","w+")
   status = c.write('1')
