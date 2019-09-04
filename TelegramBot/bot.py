@@ -11,9 +11,12 @@ import mysql.connector as mariadb
 import MySQLdb
 
 now = datetime.datetime.now()
+usr = 'watch'
+pswd = 'mawe'
+db = 'watchman'
 
-def updateRegister(numOfValues,localID,value1,column1,value2=None,column2=None,value3=None,column3=None,value4=None,column4=None):
-  mariadb_connection = mariadb.connect(user='watch', password='mawe',database='watchman')
+def updateNRFRegister(numOfValues,localID,value1,column1,value2=None,column2=None,value3=None,column3=None,value4=None,column4=None):
+  mariadb_connection = mariadb.connect(user=usr, password=pswd, database=db)
   cursor1 = mariadb_connection.cursor()
   try:
     if numOfValues == 0:
@@ -62,6 +65,55 @@ def updateRegister(numOfValues,localID,value1,column1,value2=None,column2=None,v
     return '0','0','0','0','0'
   mariadb_connection.close()
 
+def updateWifiRegister(numOfValues,ip,value1,column1,value2=None,column2=None,value3=None,column3=None,value4=None,column4=None):
+  mariadb_connection = mariadb.connect(user=usr, password=pswd, database=db)
+  cursor1 = mariadb_connection.cursor()
+  try:
+    if numOfValues == 0:
+      cursor1.execute("SELECT * FROM registeredWifiSensors")
+    else:
+      cursor1.execute("SELECT * FROM registeredWifiSensors WHERE ip = '%s'"%(str(ip)))
+    result = cursor1.fetchall()
+    rowCount = len(result)
+    cursor1.close()
+    #print rowCount
+    if rowCount >= 1:
+      for row in result:
+        sensorName = row[1]
+        vidLength = row[8]
+        camType = row[5]
+        camIP = row[6]
+        cursor2 = mariadb_connection.cursor()
+        try:
+          if numOfValues == 1:
+            cursor2.execute("UPDATE registeredWifiSensors SET %s = '%s' WHERE IP = '%s'"%(str(column1),str(value1),str(ip)))
+          elif numOfValues == 2:
+            cursor2.execute("UPDATE registeredWifiSensors SET %s = '%s', %s = '%s' WHERE IP = '%s'"%(str(column1),str(value1),str(column2),str(value2),str(ip)))
+          elif numOfValues == 3:
+            cursor2.execute("UPDATE registeredWifiSensors SET %s = '%s', %s = '%s', %s = '%s' WHERE IP = '%s'"%(str(column1),str(value1),str(column2),str(value2),str(column3),str(value3),str(ip)))
+          elif numOfValues == 4:
+            cursor2.execute("UPDATE registeredWifiSensors SET %s = '%s', %s = '%s', %s = '%s', %s = '%s' WHERE IP = '%s'"%(str(column1),str(value1),str(column2),str(value2),str(column3),str(value3),str(column4),str(value4),str(ip)))
+          elif numOfValues == 0:
+            cursor2.execute("UPDATE registeredWifiSensors SET %s = '%s'"%(str(column1),str(value1)))
+          else:
+            return '0','0','0','0','0'
+          rowCount = cursor2.rowcount
+          cursor2.close()
+          mariadb_connection.commit()
+          #print rowCount
+          if rowCount >= 1:
+            return '1',sensorName,vidLength,camType,camIP
+          else:
+            return 'A',sensorName,vidLength,camType,camIP
+        except mariadb.Error as error:
+          print("Error: {}".format(error))
+          return '0','0','0','0','0'
+    else:
+      return '0','0','0','0','0'
+  except mariadb.Error as error:
+    print("Error: {}".format(error))
+    return '0','0','0','0','0'
+  mariadb_connection.close()
 #use this function to check if ip address is valid
 def validate_ip(s):
     a = s.split('.')
@@ -125,7 +177,7 @@ def action(msg):
         file.close()
         command = msg['text']
         commandL = command.lower()
-        commandS = command.split("_")
+        commandS = command.split("|")
 
         ts = datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
         print '['+ts+'] Received: %s' % command
@@ -144,82 +196,218 @@ def action(msg):
         elif commandL == '/time':
             telegram_bot.sendMessage(chat_id, str(now.hour)+str(":")+str(now.minute))
             pass
-        elif '/disable_message_' in commandL:
-            localID = commandS[2]
-            if validate_localID(localID):
-              response = updateRegister(1,localID,0,'sendAlert')
-              state = response[0]
-              sensorName = response[1]
-              if state == '1':
-                msg = 'Message update from '+sensorName+' ['+localID+'] has been disabled!!'
-              elif state == 'A':
-                msg = 'Message update from '+sensorName+' ['+localID+'] is already disabled!!'
-              elif state == '0':
-                msg = localID+' isn\'t registered, please confirm the ID and try again..'
+        elif '/nrf_disable_message' in commandL:
+            try:
+              localID = commandS[1]
+              error = 0
+            except:
+              error = 1
+            correctFmt = 'The correct format is: \n\n\'/NRF_disable_message|localID\' \n\nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
+            if error == 0:
+              if validate_localID(localID):
+                response = updateNRFRegister(1,localID,0,'sendAlert')
+                state = response[0]
+                sensorName = response[1]
+                if state == '1':
+                  msg = 'Message update from '+sensorName+' ['+localID+'] has been disabled!!'
+                elif state == 'A':
+                  msg = 'Message update from '+sensorName+' ['+localID+'] is already disabled!!'
+                elif state == '0':
+                  msg = localID+' isn\'t registered, please confirm the ID and try again..'
+                else:
+                  msg = 'Operation failed, please try again..'
               else:
-                msg = 'Operation failed, please try again..'
+                msg = "Please provide a valid ID."+correctFmt
             else:
-              msg = "Please provide a valid ID. The correct format is: \n'/Disable_message_localID' \nWhere 'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
+              msg = "Please type in your sensor-localID."+correctFmt
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
-        elif '/enable_message_' in commandL:
-            localID = commandS[2]
-            if validate_localID(localID):
-              response = updateRegister(1,localID,1,'sendAlert')
-              state = response[0]
-              sensorName = response[1]
-              if state == '1':
-                msg = 'Message update from '+sensorName+' ['+localID+'] has been enabled!!'
-              elif state == 'A':
-                msg = 'Message update from '+sensorName+' ['+localID+'] is already enabled!!'
-              elif state == '0':
-                msg = localID+' isn\'t registered, please confirm the ID and try again..'
+        elif '/ip_disable_message' in commandL:
+            try:
+              ip = commandS[1]
+              error = 0
+            except:
+              error = 1
+            correctFmt = 'The correct format is: \n\n\'/IP_disable_message|ipaddress\' \n\nWhere \'ipaddress\' is the IP Address assigned to your WiFi Sensor.'
+            if error == 0:
+              if validate_ip(ip):
+                response = updateWifiRegister(1,ip,0,'sendAlert')
+                state = response[0]
+                sensorName = response[1]
+                if state == '1':
+                  msg = 'Message update from '+sensorName+' ['+ip+'] has been disabled!!'
+                elif state == 'A':
+                  msg = 'Message update from '+sensorName+' ['+ip+'] is already disabled!!'
+                elif state == '0':
+                  msg = ip+' isn\'t registered, please confirm the IP Address and try again..'
+                else:
+                  msg = 'Operation failed, please try again..'
               else:
-                msg = 'Operation failed, please try again..'
+                msg = "Please provide a valid IP Address."+correctFmt
             else:
-              msg = "Please provide a valid ID. The correct format is \n'/Enable_message_localID' \nWhere 'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
+              msg = "Please type in your WiFi Sensor IP Address."+correctFmt
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
-        elif '/disable_sms_' in commandL:
-            localID = commandS[2]
-            if validate_localID(localID):
-              response = updateRegister(1,localID,0,'sendSms')
-              state = response[0]
-              sensorName = response[1]
-              if state == '1':
-                msg = 'SMS update from '+sensorName+' ['+localID+'] has been disabled!!'
-              elif state == 'A':
-                msg = 'SMS update from '+sensorName+' ['+localID+'] is already disabled!!'
-              elif state == '0':
-                msg = localID+' isn\'t registered, please confirm the ID and try again..'
+        elif '/nrf_enable_message' in commandL:
+            try:
+              localID = commandS[1]
+              error = 0
+            except:
+              error = 1
+            correctFmt = "The correct format is \n\n'/NRF_enable_message|localID' \n\nWhere 'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
+            if error == 0:
+              if validate_localID(localID):
+                response = updateNRFRegister(1,localID,1,'sendAlert')
+                state = response[0]
+                sensorName = response[1]
+                if state == '1':
+                  msg = 'Message update from '+sensorName+' ['+localID+'] has been enabled!!'
+                elif state == 'A':
+                  msg = 'Message update from '+sensorName+' ['+localID+'] is already enabled!!'
+                elif state == '0':
+                  msg = localID+' isn\'t registered, please confirm the ID and try again..'
+                else:
+                  msg = 'Operation failed, please try again..'
               else:
-                msg = 'Operation failed, please try again..'
+                msg = "Please provide a valid ID."+correctFmt
             else:
-              msg = "Please provide a valid ID. The correct format is \n'/Disable_sms_localID' \nWhere 'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
+              msg = "Please type in your NRF Sensor localID."+correctFmt
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
-        elif '/enable_sms_' in commandL:
-            localID = commandS[2]
-            if validate_localID(localID):
-              response = updateRegister(1,localID,1,'sendSms')
-              state = response[0]
-              sensorName = response[1]
-              if state == '1':
-                msg = 'SMS update from '+sensorName+' ['+localID+'] has been enabled!!'
-              elif state == 'A':
-                msg = 'SMS update from '+sensorName+' ['+localID+'] is already enabled!!'
-              elif state == '0':
-                msg = localID+' isn\'t registered, please confirm the ID and try again..'
+        elif '/ip_enable_message' in commandL:
+            try:
+              ip = commandS[1]
+              error = 0
+            except:
+              error = 1
+            correctFmt = "The correct format is \n\n'/IP_enable_message|ipaddress' \n\nWhere 'ipaddress' is the IP Address assigned to your WiFi Sensor."
+            if error == 0:
+              if validate_ip(ip):
+                response = updateWifiRegister(1,ip,1,'sendAlert')
+                state = response[0]
+                sensorName = response[1]
+                if state == '1':
+                  msg = 'Message update from '+sensorName+' ['+ip+'] has been enabled!!'
+                elif state == 'A':
+                  msg = 'Message update from '+sensorName+' ['+ip+'] is already enabled!!'
+                elif state == '0':
+                  msg = ip+' isn\'t registered, please confirm the IP Address and try again..'
+                else:
+                  msg = 'Operation failed, please try again..'
               else:
-                msg = 'Operation failed, please try again..'
+                msg = "Please provide a valid IP Address."+correctFmt
             else:
-              msg = "Please provide a valid ID. The correct format is \n'/Enable_sms_localID' \nWhere 'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
+              msg = "Please type in your WiFi Sensor IP Address."+correctFmt
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
+        elif '/nrf_disable_sms' in commandL:
+            try:
+              localID = commandS[1]
+              error = 0
+            except:
+              error = 1
+            correctFmt = "The correct format is \n\n'/NRF_disable_sms|localID' \n\nWhere 'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
+            if error == 0:
+              if validate_localID(localID):
+                response = updateNRFRegister(1,localID,0,'sendSms')
+                state = response[0]
+                sensorName = response[1]
+                if state == '1':
+                  msg = 'SMS update from '+sensorName+' ['+localID+'] has been disabled!!'
+                elif state == 'A':
+                  msg = 'SMS update from '+sensorName+' ['+localID+'] is already disabled!!'
+                elif state == '0':
+                  msg = localID+' isn\'t registered, please confirm the ID and try again..'
+                else:
+                  msg = 'Operation failed, please try again..'
+              else:
+                msg = "Please provide a valid ID."+correctFmt
+            else:
+              msg = "Please type in your NRF Sensor localID."+correctFmt
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
+        elif '/ip_disable_sms' in commandL:
+            try:
+              ip = commandS[1]
+              error = 0
+            except:
+              error = 1
+            correctFmt = "The correct format is \n\n'/IP_disable_sms|ipaddress' \n\nWhere 'ipaddress' is the IP Address assigned to your WiFi Sensor."
+            if error == 0:
+              if validate_ip(ip):
+                response = updateWifiRegister(1,ip,0,'sendSms')
+                state = response[0]
+                sensorName = response[1]
+                if state == '1':
+                  msg = 'SMS update from '+sensorName+' ['+ip+'] has been disabled!!'
+                elif state == 'A':
+                  msg = 'SMS update from '+sensorName+' ['+ip+'] is already disabled!!'
+                elif state == '0':
+                  msg = ip+' isn\'t registered, please confirm the IP Address and try again..'
+                else:
+                  msg = 'Operation failed, please try again..'
+              else:
+                msg = "Please provide a valid IP Address."+correctFmt
+            else:
+              msg = "Please type in your WiFi Sensor IP Address."+correctFmt
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
+        elif '/nrf_enable_sms' in commandL:
+            try:
+              localID = commandS[1]
+              error = 0
+            except:
+              error = 1
+            correctFmt = "The correct format is \n\n'/NRF_enable_sms|localID' \n\nWhere 'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
+            if error == 0:
+              if validate_localID(localID):
+                response = updateNRFRegister(1,localID,1,'sendSms')
+                state = response[0]
+                sensorName = response[1]
+                if state == '1':
+                  msg = 'SMS update from '+sensorName+' ['+localID+'] has been enabled!!'
+                elif state == 'A':
+                  msg = 'SMS update from '+sensorName+' ['+localID+'] is already enabled!!'
+                elif state == '0':
+                  msg = localID+' isn\'t registered, please confirm the ID and try again..'
+                else:
+                  msg = 'Operation failed, please try again..'
+              else:
+                msg = "Please provide a valid ID."+correctFmt
+            else:
+              msg = "Please type in your NRF Sensor localID."+correctFmt
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
+        elif '/ip_enable_sms' in commandL:
+            try:
+              ip = commandS[1]
+              error = 0
+            except:
+              error = 1
+            correctFmt = "The correct format is \n\n'/IP_enable_sms|ipaddress' \n\nWhere 'ipaddress' is the IP Address assigned to your WiFi Sensor."
+            if error == 0:
+              if validate_ip(ip):
+                response = updateWifiRegister(1,ip,1,'sendSms')
+                state = response[0]
+                sensorName = response[1]
+                if state == '1':
+                  msg = 'SMS update from '+sensorName+' ['+ip+'] has been enabled!!'
+                elif state == 'A':
+                  msg = 'SMS update from '+sensorName+' ['+ip+'] is already enabled!!'
+                elif state == '0':
+                  msg = ip+' isn\'t registered, please confirm the IP Address and try again..'
+                else:
+                  msg = 'Operation failed, please try again..'
+              else:
+                msg = "Please provide a valid IP Address."+correctFmt
+            else:
+              msg = "Please type in your WiFi Sensor IP Address."+correctFmt
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
         elif '/disable_media_' in commandL:
             localID = commandS[2]
             if validate_localID(localID):
-              response = updateRegister(1,localID,0,'useCam')
+              response = updateNRFRegister(1,localID,0,'useCam')
               state = response[0]
               sensorName = response[1]
               if state == '1':
@@ -237,7 +425,7 @@ def action(msg):
         elif '/enable_media_' in commandL:
             localID = commandS[2]
             if validate_localID(localID):
-              response = updateRegister(1,localID,1,'useCam')
+              response = updateNRFRegister(1,localID,1,'useCam')
               state = response[0]
               sensorName = response[1]
               if state == '1':
@@ -260,7 +448,7 @@ def action(msg):
               media = '0'
             if media.lower() == 'video':
               if validate_localID(localID):
-                response = updateRegister(1,localID,'v','iOrv')
+                response = updateNRFRegister(1,localID,'v','iOrv')
                 state = response[0]
                 sensorName = response[1]
                 vidLength = response[2]
@@ -284,7 +472,7 @@ def action(msg):
                 msg = 'Please provide a valid ID. The correct format is: \n\'/Use_media_video_localID\' or \n/Use_media_image_localID \nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
             elif media.lower() == 'image':
               if validate_localID(localID):
-                response = updateRegister(1,localID,'i','iOrv')
+                response = updateNRFRegister(1,localID,'i','iOrv')
                 state = response[0]
                 sensorName = response[1]
                 camType = response[3]
@@ -322,7 +510,7 @@ def action(msg):
               lengthValid = validate_vid_length(length,minTime, maxTime)
               if lengthValid == True:
                 if validate_localID(localID):
-                  response = updateRegister(1,localID,str(length),'vidLength')
+                  response = updateNRFRegister(1,localID,str(length),'vidLength')
                   state = response[0]
                   sensorName = response[1]
                   vidLength = response[2]
@@ -370,7 +558,7 @@ def action(msg):
                   if error == 0:
                     validIP = validate_ip(ipAddr)
                     if validIP == True:
-                      response = updateRegister(2,localID,cam,'camType',ipAddr,'camIP')
+                      response = updateNRFRegister(2,localID,cam,'camType',ipAddr,'camIP')
                       state = response[0]
                       sensorName = response[1]
                       if state == '1':
@@ -386,7 +574,7 @@ def action(msg):
                   else:
                     msg = 'Please provide an IP address. The correct format is: \n\n\'/Use_camera_cameratype_localID_ipaddress\''
                 elif cam == 'usbcam' or cam == 'picam':
-                  response = updateRegister(1,localID,cam,'camType')
+                  response = updateNRFRegister(1,localID,cam,'camType')
                   state = response[0]
                   sensorName = response[1]
                   if state == '1':
@@ -528,15 +716,16 @@ def action(msg):
               msg = 'Please provide media type you want to capture and camera type. The correct format is: \n\n\'/Capture_media_cameratype_seconds_ipaddress\' \n\nWhere media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
-        elif '/register_sensor_' in commandL:
+        elif '/nrf_register_sensor' in commandL:
             try:
-              nodeID = commandS[2]
-              localID = commandS[3]
-              uniqueID = commandS[4]
-              description = commandS[5]
+              nodeID = commandS[1]
+              localID = commandS[2]
+              uniqueID = commandS[3]
+              description = commandS[4]
               error = 0
             except Exception as e:
               error = 1
+            correctFmt = 'The correct format is: \n\n\'/NRF_register_sensor|nodeID|localID|globalID|description\' \n\nWhere \'nodeID\' is the number in localID address e.g sensor address VIB001-234567 will have nodeID 1. \'localID\' is the first part of sensor address e.g VIB001. \'globalID\' is the second part of your sensor address e.g 234567. \'description \' is the name or description you give to identify your sensor e.g Front door vibration sensor'
             if error == 0:
               if validate_nodeID(nodeID):
                  if validate_localID(localID):
@@ -544,7 +733,7 @@ def action(msg):
                      if validate_description(description):
                        if int(localID[3:6]) == int(nodeID):
                          regTime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                         mariadb_connection = mariadb.connect(user='watch', password='mawe',database='watchman')
+                         mariadb_connection = mariadb.connect(user=usr, password=pswd, database=db)
                          cursor1 = mariadb_connection.cursor()
                          try:
                            cursor1.execute("INSERT INTO registeredNRFSensors (nodeID,sensorName,localID,globalID,regDate) VALUES(%s,'%s','%s',%s,'%s')"%(str(nodeID),str(description),str(localID),str(uniqueID),str(regTime)))
@@ -557,123 +746,302 @@ def action(msg):
                              msg = description+'['+localID+'] has not been registered!! confirm your entries and try again.'
                          except mariadb.Error as error:
                            print("Error: {}".format(error))
-                           msg = 'Database error occurred. Make sure there is no other sensor registered with the same nodeID and try again..'
+                           msg = 'Error occurred. Make sure there is no other sensor registered with the same nodeID and try again..'
                          mariadb_connection.close()
                        else:
                          msg = 'nodeID should be the same number as the digit part of localID. e.g. if sensor address is VIB255-234567, localID is VIB255, nodeID should be typed as 255.'
                      else:
-                       msg = 'Please provide a short description or name to identify your sensor. The correct format is: \n\n\'/Register_sensor_nodeID_localID_globalID_description\' \n\nWhere \'nodeID\' is the number in localID address e.g sensor address VIB001-234567 will have nodeID 1. \'localID\' is the first part of sensor address e.g VIB001. \'globalID\' is the second part of your sensor address e.g 234567. \'description \' is the name or description you give to identify your sensor e.g Front door vibration sensor'
+                       msg = 'Please provide a short description or name to identify your sensor.'+correctFmt
                    else:
-                     msg = 'Please type the correct globalID. If your sensor address is VIB001-234567 the globalID is 234567. The correct format is: \n\n\'/Register_sensor_nodeID_localID_globalID_description\' \n\nWhere \'nodeID\' is the number in localID address e.g sensor address VIB001-234567 will have nodeID 1. \'localID\' is the first part of sensor address e.g VIB001. \'globalID\' is the second part of your sensor address e.g 234567. \'description \' is the name or description you give to identify your sensor e.g Front door vibration sensor'
+                     msg = 'Please type the correct globalID. If your sensor address is VIB001-234567 the globalID is 234567.'+correctFmt
                  else:
-                   msg = 'Please type the correct localID. If your sensor address is VIB001-234567 the localID is VIB001. The correct format is: \n\n\'/Register_sensor_nodeID_localID_globalID_description\' \n\nWhere \'nodeID\' is the number in localID address e.g sensor address VIB001-234567 will have nodeID 1. \'localID\' is the first part of sensor address e.g VIB001. \'globalID\' is the second part of your sensor address e.g 234567. \'description \' is the name or description you give to identify your sensor e.g Front door vibration sensor'
+                   msg = 'Please type the correct localID. If your sensor address is VIB001-234567 the localID is VIB001.'+correctFmt
               else:
-                msg = 'Please type the correct nodeID, it should be a number between 1 and 255. The correct format is: \n\n\'/Register_sensor_nodeID_localID_globalID_description\' \n\nWhere \'nodeID\' is the number in localID address e.g sensor address VIB001-234567 will have nodeID 1. \'localID\' is the first part of sensor address e.g VIB001. \'globalID\' is the second part of your sensor address e.g 234567. \'description \' is the name or description you give to identify your sensor e.g Front door vibration sensor.'
+                msg = 'Please type the correct nodeID, it should be a number between 1 and 255.'+correctFmt
             else:
-              msg = 'Sensor registration failed. Please use the correct format and fill in every section. The correct format is: \n\n\'/Register_sensor_nodeID_localID_globalID_description\' \n\nWhere \'nodeID\' is the number in localID address e.g sensor address VIB001-234567 will have nodeID 1. \'localID\' is the first part of sensor address e.g VIB001. \'globalID\' is the second part of your sensor address e.g 234567. \'description \' is the name or description you give to identify your sensor e.g Front door vibration sensor'
+              msg = 'Sensor registration failed. Please use the correct format and fill in every section.'+correctFmt
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
-        elif '/remove_sensor_' in commandL:
-            localID = commandS[2]
-            if validate_localID(localID):
-              mariadb_connection = mariadb.connect(user='watch', password='mawe',database='watchman')
-              cursor1 = mariadb_connection.cursor()
-              try:
-                cursor1.execute("SELECT * FROM registeredNRFSensors WHERE localID = '%s'"%(localID))
-                result = cursor1.fetchall()
-                rowCount = len(result)
-                cursor1.close()
-                if rowCount >= 1:
-                  for row in result:
-                    sensorName = row[1]
-                    cursor2 = mariadb_connection.cursor()
-                    try:
-                      cursor2.execute("DELETE FROM registeredNRFSensors WHERE localID = '%s'"%(localID))
-                      rowCount = cursor2.rowcount
-                      cursor2.close()
-                      mariadb_connection.commit()
-                      if rowCount >= 1:
-                        msg = sensorName+'['+localID+'] has been deleted'
-                      else:
-                        msg = 'Operation failed, please try again. The correct format is: \n\'/Remove_sensor_localID\' \nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
-                    except mariadb.Error as error:
-                      print("Error: {}".format(error))
-                      msg = 'Database error occurred. Please retry later.'
+        elif '/ip_register_sensor' in commandL:
+            try:
+              ip = commandS[1]
+              description = commandS[2]
+              error = 0
+            except Exception as e:
+              error = 1
+            correctFmt = 'The correct format is: \n\n\'/IP_register_sensor|ipaddress|description\' \n\nWhere \'ipaddress\' is the IP Address of your sensor. \'description \' is the name or description you give to identify your sensor e.g Lounge area motion sensor'
+            if error == 0:
+              if validate_ip(ip):
+                if validate_description(description):
+                  regTime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                  mariadb_connection = mariadb.connect(user=usr, password=pswd, database=db)
+                  cursor1 = mariadb_connection.cursor()
+                  try:
+                    cursor1.execute("INSERT INTO registeredWifiSensors (IP,sensorName,regDate) VALUES('%s','%s','%s')"%(str(ip),str(description),str(regTime)))
+                    rowCount = cursor1.rowcount
+                    cursor1.close()
+                    mariadb_connection.commit()
+                    if rowCount >= 1:
+                      msg = description+'['+ip+'] has been registered!!'
+                    else:
+                      msg = description+'['+ip+'] has not been registered!! confirm your entries and try again.'
+                  except mariadb.Error as error:
+                    print("Error: {}".format(error))
+                    msg = 'Error occurred. Make sure there is no other sensor registered with the same IP Address and try again..'
+                  mariadb_connection.close()
                 else:
-                  msg = 'The localID \''+localID+'\' did not match any registered sensors. Please confirm your ID and try again..'
-              except mariadb.Error as error:
-                print("Error: {}".format(error))
-                msg = 'Database error occurred. Please retry later.'
-              mariadb_connection.close()
+                  msg = 'Please provide a short description or name to identify your sensor.'+correctFmt
+              else:
+                msg = 'Please provide a valid IP Address.'+correctFmt
             else:
-              msg = 'Please type in a valid ID. The correct format is: \n\'/Remove_sensor_localID\' \nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
+              msg = 'Sensor registration failed. Please use the correct format and fill in every section.'+correctFmt
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
-        elif '/show_configuration_' in commandL:
-            localID = commandS[2]
-            if validate_localID(localID):
-              mariadb_connection = mariadb.connect(user='watch', password='mawe',database='watchman')
-              cursor1 = mariadb_connection.cursor()
-              try:
-                cursor1.execute("SELECT * FROM registeredNRFSensors WHERE localID = '%s'"%(localID))
-                result = cursor1.fetchall()
-                rowCount = len(result)
-                cursor1.close()
-                if rowCount >= 1:
-                  for row in result:
-                    sensorName = row[1]
-                    localID = row[2]
-                    active = row[4]
-                    lastSeen = row[5]
-                    camType = row[7]
-                    camIP = row[8]
-                    media = row[9]
-                    vidLength = row[10]
-                    sendAlert = row[11]
-                    sendSms = row[12]
-                    useCam = row[13]
-                    def checkActive(active):
-                      if active != None:
-                        if active == 1:
-                          return 'Active'
+        elif '/nrf_remove_sensor' in commandL:
+            try:
+              localID = commandS[1]
+              error = 0
+            except:
+              error = 1
+            correctFmt = 'The correct format is: \n\'NRF_remove_sensor|localID\' \nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
+            if error == 0:
+              if validate_localID(localID):
+                mariadb_connection = mariadb.connect(user=usr, password=pswd, database=db)
+                cursor1 = mariadb_connection.cursor()
+                try:
+                  cursor1.execute("SELECT * FROM registeredNRFSensors WHERE localID = '%s'"%(localID))
+                  result = cursor1.fetchall()
+                  rowCount = len(result)
+                  cursor1.close()
+                  if rowCount >= 1:
+                    for row in result:
+                      sensorName = row[1]
+                      cursor2 = mariadb_connection.cursor()
+                      try:
+                        cursor2.execute("DELETE FROM registeredNRFSensors WHERE localID = '%s'"%(localID))
+                        rowCount = cursor2.rowcount
+                        cursor2.close()
+                        mariadb_connection.commit()
+                        if rowCount >= 1:
+                          msg = sensorName+'['+localID+'] has been deleted'
                         else:
-                          return 'Inactive'
-                      else:
-                        return 'Unknown'
-                    def returnYesOrNo(alert):
-                      if alert == 1:
-                        return 'Yes'
-                      else:
-                        return 'No'
-                    def checkMedia(media):
-                      if media == 'i':
-                        return 'Photo'
-                      elif media == 'v':
-                        return 'Video'
-                      else:
-                        return 'Unspecified'
-                    def checkLastSeen(lastSeen):
-                      if lastSeen != None:
-                        return str(lastSeen)
-                      else:
-                        return 'Unknown'
-                    def checkCamTypeOrIP(camTypeIP):
-                      if camTypeIP != None:
-                        return camTypeIP
-                      else:
-                        return 'Not specified'
-                    msg = sensorName+"["+localID+"] \nconfiguration: \n\nStatus: "+checkActive(active)+" \n\nLast Seen :"+checkLastSeen(lastSeen)+" \n\nSend alert on trigger: "+returnYesOrNo(sendAlert)+" \n\nSend SMS alerts: "+returnYesOrNo(sendSms)+" \n\nSend media on trigger: "+returnYesOrNo(useCam)+" \n\nUse camera type: "+checkCamTypeOrIP(camType)+"\n\nIP Camera address: "+checkCamTypeOrIP(camIP)+" \n\nUse media: "+checkMedia(media)+" \n\nVideo length for video mode: "+str(vidLength)
-                else:
-                  msg = 'There is no sensor registered as \''+localID+'\'.'
-              except mariadb.Error as error:
-                print("Error: {}".format(error))
-                msg = 'Database error occurred. Please retry later.'
-              mariadb_connection.close()
+                          msg = 'Operation failed, please try again.'+correctFmt
+                      except mariadb.Error as error:
+                        print("Error: {}".format(error))
+                        msg = 'Database error occurred. Please retry later.'
+                  else:
+                    msg = 'The localID \''+localID+'\' did not match any registered sensors. Please confirm your ID and try again..'
+                except mariadb.Error as error:
+                  print("Error: {}".format(error))
+                  msg = 'Database error occurred. Please retry later.'
+                mariadb_connection.close()
+              else:
+                msg = 'Please type in a valid ID.'+correctFmt
             else:
-              msg = 'Please type a valid ID. The correct format is: \n\'/Show_configuration_localID\' \nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
+              msg =  'Please provide the localID of the sensor you want to remove.'+correctFmt
             telegram_bot.sendMessage(chat_id, str(msg))
-        elif '/show_registered_sensors' in commandL:
-            mariadb_connection = mariadb.connect(user='watch', password='mawe',database='watchman')
+            pass
+        elif '/ip_remove_sensor' in commandL:
+            try:
+              ip = commandS[1]
+              error = 0
+            except:
+              error = 1
+            correctFmt = 'The correct format is: \n\'IP_remove_sensor|ipaddress\' \nWhere \'ipaddress\' is the IP Address of your sensor.'
+            if error == 0:
+              if validate_ip(ip):
+                mariadb_connection = mariadb.connect(user=usr, password=pswd, database=db)
+                cursor1 = mariadb_connection.cursor()
+                try:
+                  cursor1.execute("SELECT * FROM registeredWifiSensors WHERE IP = '%s'"%(str(ip)))
+                  result = cursor1.fetchall()
+                  rowCount = len(result)
+                  cursor1.close()
+                  if rowCount >= 1:
+                    for row in result:
+                      sensorName = row[1]
+                      cursor2 = mariadb_connection.cursor()
+                      try:
+                        cursor2.execute("DELETE FROM registeredWifiSensors WHERE IP = '%s'"%(str(ip)))
+                        rowCount = cursor2.rowcount
+                        cursor2.close()
+                        mariadb_connection.commit()
+                        if rowCount >= 1:
+                          msg = sensorName+'['+ip+'] has been deleted'
+                        else:
+                          msg = 'Operation failed, please try again.'+correctFmt
+                      except mariadb.Error as error:
+                        print("Error: {}".format(error))
+                        msg = 'Database error occurred. Please retry later.'
+                  else:
+                    msg = 'The IP \''+ip+'\' did not match any registered WiFi sensors. Please confirm your IP Address and try again..'
+                except mariadb.Error as error:
+                  print("Error: {}".format(error))
+                  msg = 'Database error occurred. Please retry later.'
+                mariadb_connection.close()
+              else:
+                msg = 'Please type in a valid IP.'+correctFmt
+            else:
+              msg =  'Please provide the IP Address of the WiFi sensor you want to remove.'+correctFmt
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
+        elif '/nrf_show_configuration' in commandL:
+            try:
+              localID = commandS[1]
+              error = 0
+            except:
+              error = 1
+            correctFmt = 'The correct format is: \n\n\'/NRF_show_configuration|localID\' \n\nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
+            if error == 0:
+              if validate_localID(localID):
+                mariadb_connection = mariadb.connect(user=usr, password=pswd, database=db)
+                cursor1 = mariadb_connection.cursor()
+                try:
+                  cursor1.execute("SELECT * FROM registeredNRFSensors WHERE localID = '%s'"%(localID))
+                  result = cursor1.fetchall()
+                  rowCount = len(result)
+                  cursor1.close()
+                  if rowCount >= 1:
+                    for row in result:
+                      sensorName = row[1]
+                      localID = row[2]
+                      active = row[4]
+                      lastSeen = row[5]
+                      camType = row[7]
+                      camIP = row[8]
+                      media = row[9]
+                      vidLength = row[10]
+                      sendAlert = row[11]
+                      sendSms = row[12]
+                      useCam = row[13]
+                      batt = row[14]
+                      def checkActive(active):
+                        if active != None:
+                          if active == 1:
+                            return 'Active'
+                          else:
+                            return 'Offline'
+                        else:
+                          return 'Unknown'
+                      def returnYesOrNo(alert):
+                        if alert == 1:
+                          return 'Yes'
+                        else:
+                          return 'No'
+                      def checkMedia(media):
+                        if media == 'i':
+                          return 'Photo'
+                        elif media == 'v':
+                          return 'Video'
+                        else:
+                          return 'Unspecified'
+                      def checkLastSeen(lastSeen):
+                        if lastSeen != None:
+                          return str(lastSeen)
+                        else:
+                          return 'Unknown'
+                      def checkCamTypeOrIP(camTypeIP):
+                        if camTypeIP != None:
+                          return camTypeIP
+                        else:
+                          return 'Not specified'
+                      def checkBatt(batt):
+                        if batt != None:
+                          return str(batt)+'%'
+                        else:
+                          return 'Unknown'
+                      msg = sensorName+"["+localID+"] \nconfiguration: \n\nStatus: "+checkActive(active)+" \n\nLast Seen :"+checkLastSeen(lastSeen)+" \n\nSend alert on trigger: "+returnYesOrNo(sendAlert)+" \n\nSend SMS alerts: "+returnYesOrNo(sendSms)+" \n\nSend media on trigger: "+returnYesOrNo(useCam)+" \n\nUse camera type: "+checkCamTypeOrIP(camType)+"\n\nIP Camera address: "+checkCamTypeOrIP(camIP)+" \n\nUse media: "+checkMedia(media)+" \n\nVideo length for video mode: "+str(vidLength)+"\n\nBattery Level: "+checkBatt(batt)
+                  else:
+                    msg = 'There is no sensor registered as \''+localID+'\'.'
+                except mariadb.Error as error:
+                  print("Error: {}".format(error))
+                  msg = 'Database error occurred. Please retry later.'
+                mariadb_connection.close()
+              else:
+                msg = 'Please type a valid ID.'+correctFmt
+            else:
+              msg = 'Please provide a valid ID to check NRF sensor configuration.'+correctFmt
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
+        elif '/ip_show_configuration' in commandL:
+            try:
+              ip = commandS[1]
+              error = 0
+            except:
+              error = 1
+            correctFmt = 'The correct format is: \n\n\'/IP_show_configuration|ipaddress\' \n\nWhere \'ipaddress\' is the IP Address of your WiFi sensor.'
+            if error == 0:
+              if validate_ip(ip):
+                mariadb_connection = mariadb.connect(user=usr, password=pswd, database=db)
+                cursor1 = mariadb_connection.cursor()
+                try:
+                  cursor1.execute("SELECT * FROM registeredWifiSensors WHERE IP = '%s'"%(ip))
+                  result = cursor1.fetchall()
+                  rowCount = len(result)
+                  cursor1.close()
+                  if rowCount >= 1:
+                    for row in result:
+                      sensorName = row[1]
+                      active = row[2]
+                      lastSeen = row[3]
+                      camType = row[5]
+                      camIP = row[6]
+                      media = row[7]
+                      vidLength = row[8]
+                      sendAlert = row[9]
+                      sendSms = row[10]
+                      useCam = row[11]
+                      batt = row[12]
+                      def checkActive(active):
+                        if active != None:
+                          if active == 1:
+                            return 'Active'
+                          else:
+                            return 'Offline'
+                        else:
+                          return 'Unknown'
+                      def returnYesOrNo(alert):
+                        if alert == 1:
+                          return 'Yes'
+                        else:
+                          return 'No'
+                      def checkMedia(media):
+                        if media == 'i':
+                          return 'Photo'
+                        elif media == 'v':
+                          return 'Video'
+                        else:
+                          return 'Unspecified'
+                      def checkLastSeen(lastSeen):
+                        if lastSeen != None:
+                          return str(lastSeen)
+                        else:
+                          return 'Unknown'
+                      def checkCamTypeOrIP(camTypeIP):
+                        if camTypeIP != None:
+                          return camTypeIP
+                        else:
+                          return 'Not specified'
+                      def checkBatt(batt):
+                        if batt != None:
+                          return str(batt)+'%'
+                        else:
+                          return 'Unknown'
+                      msg = sensorName+"["+ip+"] \nconfiguration: \n\nStatus: "+checkActive(active)+" \n\nLast Seen :"+checkLastSeen(lastSeen)+" \n\nSend alert on trigger: "+returnYesOrNo(sendAlert)+" \n\nSend SMS alerts: "+returnYesOrNo(sendSms)+" \n\nSend media on trigger: "+returnYesOrNo(useCam)+" \n\nUse camera type: "+checkCamTypeOrIP(camType)+"\n\nIP Camera address: "+checkCamTypeOrIP(camIP)+" \n\nUse media: "+checkMedia(media)+" \n\nVideo length for video mode: "+str(vidLength)+"\n\nBattery Level: "+checkBatt(batt)
+                  else:
+                    msg = 'There is no WiFi sensor with IP Address \''+ip+'\'.'
+                except mariadb.Error as error:
+                  print("Error: {}".format(error))
+                  msg = 'Database error occurred. Please retry later.'
+                mariadb_connection.close()
+              else:
+                msg = 'Please type a valid IP Address.'+correctFmt
+            else:
+              msg = 'Please provide a valid IP Address to check WiFi sensor configuration.'+correctFmt
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
+        elif '/nrf_show_registered_sensors' in commandL:
+            mariadb_connection = mariadb.connect(user=usr, password=pswd, database=db)
             cursor1 = mariadb_connection.cursor()
             try:
               cursor1.execute("SELECT * FROM registeredNRFSensors")
@@ -681,7 +1049,7 @@ def action(msg):
               rowCount = len(result)
               cursor1.close()
               if rowCount >= 1:
-                msg = 'Registered Sensors:'
+                msg = 'Registered NRF Sensors:'
                 count = 0
                 for row in result:
                   count += 1
@@ -703,11 +1071,46 @@ def action(msg):
                       msg += '\n\n'+str(count)+'. ['+localID+'][Active] '+sensorName+'.'
                   else:
                     if lastSeen != None:
-                      msg += '\n\n'+str(count)+'. ['+localID+'][Inactive] '+sensorName+'. Last seen: '+str(lastSeen)
+                      msg += '\n\n'+str(count)+'. ['+localID+'][Offline] '+sensorName+'. Last seen: '+str(lastSeen)
                     else:
-                      msg += '\n\n'+str(count)+'. ['+localID+'][Inactive] '+sensorName+'.'
+                      msg += '\n\n'+str(count)+'. ['+localID+'][Offline] '+sensorName+'.'
               else:
-                msg = 'You have no registered sensors!!'
+                msg = 'You have no registered NRF sensors!!'
+            except mariadb.Error as error:
+              print("Error: {}".format(error))
+              msg = 'Database error occurred. Please retry later.'
+            mariadb_connection.close()
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
+        elif '/ip_show_registered_sensors' in commandL:
+            mariadb_connection = mariadb.connect(user=usr, password=pswd, database=db)
+            cursor1 = mariadb_connection.cursor()
+            try:
+              cursor1.execute("SELECT * FROM registeredWifiSensors")
+              result = cursor1.fetchall()
+              rowCount = len(result)
+              cursor1.close()
+              if rowCount >= 1:
+                msg = 'Registered WiFi Sensors:'
+                count = 0
+                for row in result:
+                  count += 1
+                  ip = row[0]
+                  sensorName = row[1]
+                  active = row[2]
+                  lastSeen = row[3]
+                  if active == 1:
+                    if lastSeen != None:
+                      msg += '\n\n'+str(count)+'. ['+ip+'][Active] '+sensorName+'. Last seen: '+str(lastSeen)
+                    else:
+                      msg += '\n\n'+str(count)+'. ['+ip+'][Active] '+sensorName+'.'
+                  else:
+                    if lastSeen != None:
+                      msg += '\n\n'+str(count)+'. ['+ip+'][Offline] '+sensorName+'. Last seen: '+str(lastSeen)
+                    else:
+                      msg += '\n\n'+str(count)+'. ['+ip+'][Offline] '+sensorName+'.'
+              else:
+                msg = 'You have no registered wifi sensors!!'
             except mariadb.Error as error:
               print("Error: {}".format(error))
               msg = 'Database error occurred. Please retry later.'
@@ -715,7 +1118,7 @@ def action(msg):
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
         elif commandL == '/stop':
-            response = updateRegister(0,'*',0,'sendAlert')
+            response = updateNRFRegister(0,'*',0,'sendAlert')
             state = response[0]
             sensorName = response[1]
             if state == '1':
@@ -729,7 +1132,7 @@ def action(msg):
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
         elif commandL == '/start':
-            response = updateRegister(0,'*',1,'sendAlert')
+            response = updateNRFRegister(0,'*',1,'sendAlert')
             state = response[0]
             sensorName = response[1]
             if state == '1':
