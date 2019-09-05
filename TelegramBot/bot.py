@@ -179,20 +179,30 @@ def action(msg):
         commandL = command.lower()
         commandC = command.replace(" ","")
         commandS = commandC.split("|")
+        commandS2 = command.split("|")
 
         ts = datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
         print '['+ts+'] Received: %s' % command
 
         GREETING_INPUTS = ("hello", "hi", "greetings", "sup", "what's up","hey", "wasup", "sasa", "bonjour", "howdy", "how are you", "vipi")
-        GREETING_RESPONSES = ["Hi", "Hey", "Hello", "Hi there..", "How is your day..", "Im ok.."]
+        GREETING_RESPONSES = ["Hi, ", "Hey, ", "Hello, ", "Hi there, ", "How is your day, "]
 
         for word in commandL.split():
             if word in GREETING_INPUTS:
-                telegram_bot.sendMessage (chat_id, random.choice(GREETING_RESPONSES)+"\n\nType /Help to see a list of commands..")
+                telegram_bot.sendMessage (chat_id, random.choice(GREETING_RESPONSES)+"type /Help to see a list of commands..")
                 return
 
         if '/help' in commandL:
-            telegram_bot.sendMessage (chat_id, str("Use the following commands to interact with me:\n\n/Start - Enable all sensors to send updates when triggered.\n\n/Stop - Stop all sensor message updates.\n\n/Show_registered_sensors - Show all registered sensors.\n\n/Register_sensor_nodeID_localID_globalID_description - Register a new sensor.\n\n/Remove_sensor_SensorID - Unregister a sensor.\n\n/Show_configuration_SensorID - Show the configuration of your sensor.\n\n/Enable_message_SensorID - Enable message updates from your sensor.\n\n/Disable_message_SensorID - Disable alerts from your sensor.\n\n/Enable_media_SensorID - Enable media alerts(photo or video) when sensor is triggered.\n\n/Disable_media_SensorID - Disable photo and video messages when sensor is triggered.\n\n/Enable_sms_SensorID - Enable your sensor to send SMS message when Internet is unavailable.\n\n/Disable_sms_SensorID - Disable SMS alerts from your sensor.\n\n/Use_media_video_SensorID or \n/Use_media_image_SensorID - Configure your sensor to send either photos or videos when triggered.\n\n/Use_camera_cameratype_SensorID_ipaddress - Configure the type of camera your sensor will use when triggered.\n\n/Set_videolength_seconds_SensorID - Configure video clip duration when video mode is selected.\n\n/Capture_media_cameratype_seconds_ipaddress - Capture an image or video from your camera.\n\n/Temperature - Check system temperature.\n\n/Disk_Space - Check space usage on the SD card\n\n/Reboot - Reboot the device.\n\n/Shutdown - Turn off the device."))
+            telegram_bot.sendMessage (chat_id, str("Use the following commands to configure your device:\n/Start\n/Stop\n/Show_NRF_sensor_commands\n/Show_IP_sensor_commands\n/Show_camera_commands\n/Temperature\n/Disk_Space\n/Reboot\n/Shutdown"))
+            pass
+        elif '/show_nrf_sensor_commands' in commandL:
+            telegram_bot.sendMessage (chat_id, str("NRF-Sensor Configuration Commands:\n\n/NRF_show_registered_sensors\n\n/NRF_show_configuration|SensorID\n\n/NRF_register_sensor|nodeID|localID|globalID|description\n\n/NRF_remove_sensor|SensorID\n\n/NRF_enable_message|SensorID\n\n/NRF_disable_message|SensorID\n\n/NRF_enable_media|SensorID\n\n/NRF_disable_media|SensorID\n\n/NRF_enable_sms|SensorID\n\n/NRF_disable_sms|SensorID\n\n/NRF_use_media|mediatype|SensorID\n\n/NRF_use_camera|cameratype|SensorID|ipaddress\n\n/NRF_set_videolength|seconds|SensorID"))
+            pass
+        elif '/show_ip_sensor_commands' in commandL:
+            telegram_bot.sendMessage (chat_id, str("IP-Sensor Configuration Commands:\n\n/IP_show_registered_sensors\n\n/IP_show_configuration|ipaddress\n\n/IP_register_sensor|ipaddress|description\n\n/IP_remove_sensor|ipaddress\n\n/IP_enable_message|ipaddress\n\n/IP_disable_message|ipaddress\n\n/IP_enable_media|ipaddress\n\n/IP_disable_media|ipaddress\n\n/IP_enable_sms|ipaddress\n\n/IP_disable_sms|ipaddress\n\n/IP_use_media|mediatype|ipaddress\n\n/IP_use_camera|cameratype|sensoripaddress|cameraipaddress\n\n/IP_set_videolength|seconds|ipaddress"))
+            pass
+        elif '/show_camera_commands' in commandL:
+            telegram_bot.sendMessage (chat_id, str("Camera Configuration Commands:\n\n/Capture|mediatype|cameratype|seconds|ipaddress\n\n/Show_available_camera\n\n/IPCam_register_camera|ipaddress|description\n\n/IPCam_remove_camera|ipaddress"))
             pass
         elif commandL == '/time':
             telegram_bot.sendMessage(chat_id, str(now.hour)+str(":")+str(now.minute))
@@ -967,7 +977,7 @@ def action(msg):
               nodeID = commandS[1]
               localID = commandS[2]
               uniqueID = commandS[3]
-              description = commandS[4]
+              description = commandS2[4]
               error = 0
             except Exception as e:
               error = 1
@@ -1011,7 +1021,7 @@ def action(msg):
         elif '/ip_register_sensor' in commandL:
             try:
               ip = commandS[1]
-              description = commandS[2]
+              description = commandS2[2]
               error = 0
             except Exception as e:
               error = 1
@@ -1046,7 +1056,7 @@ def action(msg):
         elif '/ipcam_register_camera' in commandL:
             try:
               ip = commandS[1]
-              description = commandS[2]
+              description = commandS2[2]
               error = 0
             except Exception as e:
               error = 1
@@ -1084,7 +1094,7 @@ def action(msg):
               error = 0
             except:
               error = 1
-            correctFmt = 'The correct format is: \n\'NRF_remove_sensor | localID\' \nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
+            correctFmt = 'The correct format is: \n\n\'/NRF_remove_sensor | localID\' \n\nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
             if error == 0:
               if validate_localID(localID):
                 mariadb_connection = mariadb.connect(user=usr, password=pswd, database=db)
@@ -1128,7 +1138,7 @@ def action(msg):
               error = 0
             except:
               error = 1
-            correctFmt = 'The correct format is: \n\'IP_remove_sensor | ipaddress\' \nWhere \'ipaddress\' is the IP Address of your sensor.'
+            correctFmt = 'The correct format is: \n\n\'/IP_remove_sensor | ipaddress\' \n\nWhere \'ipaddress\' is the IP Address of your sensor.'
             if error == 0:
               if validate_ip(ip):
                 mariadb_connection = mariadb.connect(user=usr, password=pswd, database=db)
@@ -1497,35 +1507,38 @@ def action(msg):
             response = updateNRFRegister(0,'*',0,'sendAlert')
             response2 = updateWifiRegister(0,'*',0,'sendAlert')
             state = response[0]
-            sensorName = response[1]
-            if state == '1':
-              msg = 'Message update from all sensors have been disabled, you will no longer receive any updates. \nType /Start to enable updates from sensors.'
-            elif state == 'A':
-              msg = 'Message update from all sensors have already been disabled, you will no longer receive any updates. \nType /Start to enable updates from sensors.'
-            elif state == '0':
-              msg = 'There was an error, have you registered any sensors? please try again..'
-            else:
-              msg = 'Operation failed, please try again..'
+            state2 = response2[0]
+            msg = 'Hi, '
+            if (state == '1')or(state2 == '1'):
+              msg += 'message update from all sensors have been disabled, you will no longer receive any updates. \nType /Start to enable updates from sensors.'
+            if (state == 'A') or (state2 == 'A'):
+              msg += 'message update from all sensors have already been disabled, you will no longer receive any updates. \nType /Start to enable updates from sensors.'
+            if state == '0':
+              msg += '\nThere was an error stopping NRF sensors, have you registered any NRF sensors? ..'
+            if state2 == '0':
+              msg += '\nThere was an error stoppng WiFi sensors, have you registered any WiFi sensors? ..'
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
         elif commandL == '/start':
             response = updateNRFRegister(0,'*',1,'sendAlert')
+            response2 = updateWifiRegister(0,'*',1,'sendAlert')
             state = response[0]
-            sensorName = response[1]
-            if state == '1':
-              msg = 'Message update from all sensors have been enabled, you will receive updates from all sensors. \nType /Stop to disable updates from all sensors.'
-            elif state == 'A':
-              msg = 'Message update from all sensors have already been enabled, you will receive updates from all sensors. \nType /Stop to disable updates from all sensors.'
-            elif state == '0':
-              msg = 'There was an error, have you registered any sensors? please try again..'
-            else:
-              msg = 'Operation failed, please try again..'
+            state2 = response2[0]
+            msg = 'Hi, '
+            if (state == '1')or(state2 == '1'):
+              msg += 'message update from all sensors have been enabled, you will receive updates from all sensors. \nType /Stop to disable updates from sensors.'
+            if (state == 'A') or (state2 == 'A'):
+              msg += 'message update from all sensors have already been enabled, you will receive updates from all sensors. \nType /Stop to disable updates from sensors.'
+            if state == '0':
+              msg += '\nThere was an error starting NRF sensors, have you registered any NRF sensors? ..'
+            if state2 == '0':
+              msg += '\nThere was an error starting WiFi sensors, have you registered any WiFi sensors? ..'
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
         elif commandL == '/temperature':
             t=float(subprocess.check_output(["/opt/vc/bin/vcgencmd measure_temp  |  cut -c6-9"], shell=True)[:-1])
             ts=str(t)
-            answer = 'My temperature is '+ts+' °C'
+            answer = 'Device temperature is '+ts+' °C'
             telegram_bot.sendMessage (chat_id, str(answer))
             pass
         elif commandL == '/show_ip':
