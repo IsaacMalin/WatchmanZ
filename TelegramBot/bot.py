@@ -177,7 +177,8 @@ def action(msg):
         file.close()
         command = msg['text']
         commandL = command.lower()
-        commandS = command.split("|")
+        commandC = command.replace(" ","")
+        commandS = commandC.split("|")
 
         ts = datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
         print '['+ts+'] Received: %s' % command
@@ -202,7 +203,7 @@ def action(msg):
               error = 0
             except:
               error = 1
-            correctFmt = 'The correct format is: \n\n\'/NRF_disable_message|localID\' \n\nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
+            correctFmt = 'The correct format is: \n\n\'/NRF_disable_message | localID\' \n\nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
             if error == 0:
               if validate_localID(localID):
                 response = updateNRFRegister(1,localID,0,'sendAlert')
@@ -228,7 +229,7 @@ def action(msg):
               error = 0
             except:
               error = 1
-            correctFmt = 'The correct format is: \n\n\'/IP_disable_message|ipaddress\' \n\nWhere \'ipaddress\' is the IP Address assigned to your WiFi Sensor.'
+            correctFmt = 'The correct format is: \n\n\'/IP_disable_message | ipaddress\' \n\nWhere \'ipaddress\' is the IP Address assigned to your WiFi Sensor.'
             if error == 0:
               if validate_ip(ip):
                 response = updateWifiRegister(1,ip,0,'sendAlert')
@@ -254,7 +255,7 @@ def action(msg):
               error = 0
             except:
               error = 1
-            correctFmt = "The correct format is \n\n'/NRF_enable_message|localID' \n\nWhere 'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
+            correctFmt = "The correct format is \n\n'/NRF_enable_message | localID' \n\nWhere 'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
             if error == 0:
               if validate_localID(localID):
                 response = updateNRFRegister(1,localID,1,'sendAlert')
@@ -280,7 +281,7 @@ def action(msg):
               error = 0
             except:
               error = 1
-            correctFmt = "The correct format is \n\n'/IP_enable_message|ipaddress' \n\nWhere 'ipaddress' is the IP Address assigned to your WiFi Sensor."
+            correctFmt = "The correct format is \n\n'/IP_enable_message | ipaddress' \n\nWhere 'ipaddress' is the IP Address assigned to your WiFi Sensor."
             if error == 0:
               if validate_ip(ip):
                 response = updateWifiRegister(1,ip,1,'sendAlert')
@@ -306,7 +307,7 @@ def action(msg):
               error = 0
             except:
               error = 1
-            correctFmt = "The correct format is \n\n'/NRF_disable_sms|localID' \n\nWhere 'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
+            correctFmt = "The correct format is \n\n'/NRF_disable_sms | localID' \n\nWhere 'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
             if error == 0:
               if validate_localID(localID):
                 response = updateNRFRegister(1,localID,0,'sendSms')
@@ -332,7 +333,7 @@ def action(msg):
               error = 0
             except:
               error = 1
-            correctFmt = "The correct format is \n\n'/IP_disable_sms|ipaddress' \n\nWhere 'ipaddress' is the IP Address assigned to your WiFi Sensor."
+            correctFmt = "The correct format is \n\n'/IP_disable_sms | ipaddress' \n\nWhere 'ipaddress' is the IP Address assigned to your WiFi Sensor."
             if error == 0:
               if validate_ip(ip):
                 response = updateWifiRegister(1,ip,0,'sendSms')
@@ -358,7 +359,7 @@ def action(msg):
               error = 0
             except:
               error = 1
-            correctFmt = "The correct format is \n\n'/NRF_enable_sms|localID' \n\nWhere 'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
+            correctFmt = "The correct format is \n\n'/NRF_enable_sms | localID' \n\nWhere 'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
             if error == 0:
               if validate_localID(localID):
                 response = updateNRFRegister(1,localID,1,'sendSms')
@@ -384,7 +385,7 @@ def action(msg):
               error = 0
             except:
               error = 1
-            correctFmt = "The correct format is \n\n'/IP_enable_sms|ipaddress' \n\nWhere 'ipaddress' is the IP Address assigned to your WiFi Sensor."
+            correctFmt = "The correct format is \n\n'/IP_enable_sms | ipaddress' \n\nWhere 'ipaddress' is the IP Address assigned to your WiFi Sensor."
             if error == 0:
               if validate_ip(ip):
                 response = updateWifiRegister(1,ip,1,'sendSms')
@@ -404,48 +405,117 @@ def action(msg):
               msg = "Please type in your WiFi Sensor IP Address."+correctFmt
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
-        elif '/disable_media_' in commandL:
-            localID = commandS[2]
-            if validate_localID(localID):
-              response = updateNRFRegister(1,localID,0,'useCam')
-              state = response[0]
-              sensorName = response[1]
-              if state == '1':
-                msg = 'Media update from '+sensorName+' ['+localID+'] has been disabled!!'
-              elif state == 'A':
-                msg = 'Media update from '+sensorName+' ['+localID+'] is already disabled!!'
-              elif state == '0':
-                msg = localID+' isn\'t registered, please confirm the ID and try again..'
-              else:
-                msg = 'Operation failed, please try again..'
-            else:
-              msg = "Please provide a valid ID. The correct format is \n'/Disable_media_localID' \nWhere 'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
-            telegram_bot.sendMessage(chat_id, str(msg))
-            pass
-        elif '/enable_media_' in commandL:
-            localID = commandS[2]
-            if validate_localID(localID):
-              response = updateNRFRegister(1,localID,1,'useCam')
-              state = response[0]
-              sensorName = response[1]
-              if state == '1':
-                msg = 'Media update from '+sensorName+' ['+localID+'] has been enabled!!'
-              elif state == 'A':
-                msg = 'Media update from '+sensorName+' ['+localID+'] is already enabled!!'
-              elif state == '0':
-                msg = localID+' isn\'t registered, please confirm the ID and try again..'
-              else:
-                msg = 'Operation failed, please try again..'
-            else:
-              msg = "Please provide a valid ID. The correct format is \n'/Enable_media_localID' \nWhere 'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
-            telegram_bot.sendMessage(chat_id, str(msg))
-            pass
-        elif 'use_media_' in commandL:
+        elif '/nrf_disable_media' in commandL:
             try:
-              media = commandS[2]
-              localID = commandS[3]
+              localID = commandS[1]
+              error = 0
+            except:
+              error = 1
+            correctFmt = "The correct format is \n\n'/NRF_disable_media | localID' \n\nWhere 'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
+            if error == 0:
+              if validate_localID(localID):
+                response = updateNRFRegister(1,localID,0,'useCam')
+                state = response[0]
+                sensorName = response[1]
+                if state == '1':
+                  msg = 'Media update from '+sensorName+' ['+localID+'] has been disabled!!'
+                elif state == 'A':
+                  msg = 'Media update from '+sensorName+' ['+localID+'] is already disabled!!'
+                elif state == '0':
+                  msg = localID+' isn\'t registered, please confirm the ID and try again..'
+                else:
+                  msg = 'Operation failed, please try again..'
+              else:
+                msg = "Please provide a valid ID."+correctFmt
+            else:
+              msg = "Please type in your NRF Sensor localID."+correctFmt
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
+        elif '/ip_disable_media' in commandL:
+            try:
+              ip = commandS[1]
+              error = 0
+            except:
+              error = 1
+            correctFmt = "The correct format is: \n\n'/IP_disable_media | ipaddress' \n\nWhere 'ipaddress' is the IP Address assigned to your WiFi Sensor."
+            if error == 0:
+              if validate_ip(ip):
+                response = updateWifiRegister(1,ip,0,'useCam')
+                state = response[0]
+                sensorName = response[1]
+                if state == '1':
+                  msg = 'Media update from '+sensorName+' ['+ip+'] has been disabled!!'
+                elif state == 'A':
+                  msg = 'Media update from '+sensorName+' ['+ip+'] is already disabled!!'
+                elif state == '0':
+                  msg = ip+' isn\'t registered, please confirm the ID and try again..'
+                else:
+                  msg = 'Operation failed, please try again..'
+              else:
+                msg = "Please provide a valid IP Address."+correctFmt
+            else:
+              msg = "Please type in your WiFi Sensor IP Address."+correctFmt
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
+        elif '/nrf_enable_media' in commandL:
+            try:
+              localID = commandS[1]
+              error = 0
+            except:
+              error = 1
+            correctFmt = "The correct format is \n\n'/NRF_enable_media | localID' \n\nWhere 'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
+            if error == 0:
+              if validate_localID(localID):
+                response = updateNRFRegister(1,localID,1,'useCam')
+                state = response[0]
+                sensorName = response[1]
+                if state == '1':
+                  msg = 'Media update from '+sensorName+' ['+localID+'] has been enabled!!'
+                elif state == 'A':
+                  msg = 'Media update from '+sensorName+' ['+localID+'] is already enabled!!'
+                elif state == '0':
+                  msg = localID+' isn\'t registered, please confirm the ID and try again..'
+                else:
+                  msg = 'Operation failed, please try again..'
+              else:
+                msg = "Please provide a valid ID."+correctFmt
+            else:
+              msg = "Please type in your NRF Sensor localID."+correctFmt
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
+        elif '/ip_enable_media' in commandL:
+            try:
+              ip = commandS[1]
+              error = 0
+            except:
+              error = 1
+            correctFmt = "The correct format is \n\n'/IP_enable_media | ipaddress' \n\nWhere 'ipaddress' is the IP Address assigned to your WiFi Sensor."
+            if error == 0:
+              if validate_ip(ip):
+                response = updateWifiRegister(1,ip,1,'useCam')
+                state = response[0]
+                sensorName = response[1]
+                if state == '1':
+                  msg = 'Media update from '+sensorName+' ['+ip+'] has been enabled!!'
+                elif state == 'A':
+                  msg = 'Media update from '+sensorName+' ['+ip+'] is already enabled!!'
+                elif state == '0':
+                  msg = ip+' isn\'t registered, please confirm the ID and try again..'
+                else:
+                  msg = 'Operation failed, please try again..'
+              else:
+                msg = "Please provide a valid IP Address."+correctFmt
+            else:
+              msg = "Please type in your WiFi Sensor IP Address."+correctFmt
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
+        elif '/nrf_use_media' in commandL:
+            try:
+              media = commandS[1]
+              localID = commandS[2]
             except Exception as e:
               media = '0'
+            correctFmt = 'The correct format is: \n\n\'/NRF_use_media | video | localID\' or \n/NRF_use_media | image | localID \n\nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
             if media.lower() == 'video':
               if validate_localID(localID):
                 response = updateNRFRegister(1,localID,'v','iOrv')
@@ -453,6 +523,8 @@ def action(msg):
                 sensorName = response[1]
                 vidLength = response[2]
                 camType = response[3]
+                if camType == None:
+                  state = 'C'
                 camIP = response[4]
                 if state == '1':
                   if camType == 'ipcam':
@@ -465,17 +537,21 @@ def action(msg):
                   else:
                     msg = sensorName+' ['+localID+'] is already configured to send videos from '+camType+' on sensor trigger!!'
                 elif state == '0':
-                  msg = 'Please confirm the ID and try again, you entered: \''+localID+'\' as your sensorID'
+                  msg = 'The ID did not match any registered sensors. Please confirm the ID and try again, you entered: \''+localID+'\' as your NRF Sensor localID.'
+                elif state == 'C':
+                  msg = "Please configure the camera type to use first. Use the following command: \n\n'/NRF_use_camera | cameratype | SensorID | ipaddress'."
                 else:
                   msg = 'Operation failed, please try again..'
               else:
-                msg = 'Please provide a valid ID. The correct format is: \n\'/Use_media_video_localID\' or \n/Use_media_image_localID \nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
+                msg = 'Please provide a valid ID.'+correctFmt
             elif media.lower() == 'image':
               if validate_localID(localID):
                 response = updateNRFRegister(1,localID,'i','iOrv')
                 state = response[0]
                 sensorName = response[1]
                 camType = response[3]
+                if camType == None:
+                  state = 'C'
                 camIP = response[4]
                 if state == '1':
                   if camType == 'ipcam':
@@ -488,22 +564,92 @@ def action(msg):
                   else:
                     msg = sensorName+' ['+localID+'] is already configured to send images from '+camType+' on sensor trigger!!'
                 elif state == '0':
-                  msg = 'Please confirm the ID and try again, you entered: \''+localID+'\' as your sensorID'
+                  msg = 'The ID did not match any registered sensors. Please confirm the ID and try again, you entered: \''+localID+'\' as your NRF Sensor localID.'
+                elif state == 'C':
+                  msg = "Please configure the camera type to use first. Use the following command: \n\n/NRF_use_camera | cameratype | SensorID | ipaddress"
                 else:
                   msg = 'Operation failed, please try again..'
               else:
-                msg = 'Please provide a valid ID. The correct format is: \n\'/Use_media_video_localID\' or \n/Use_media_image_localID \nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
+                msg = 'Please provide a valid ID.'+correctFmt
             else:
-              msg = 'Please specify either image or video and sensor ID in your syntax. \n The correct format is \n\'/Use_media_video_localID\' or \n\'/Use_media_image_localID\' \nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
+              msg = 'Please specify either image or video and NRF sensor ID in your syntax.'+correctFmt
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
-        elif '/set_videolength_' in commandL:
+        elif '/ip_use_media' in commandL:
             try:
-              length = commandS[2]
-              localID = commandS[3]
+              media = commandS[1]
+              ip = commandS[2]
+            except Exception as e:
+              media = '0'
+            correctFmt = 'The correct format is: \n\n\'/IP_use_media | video | ipaddress\' or \n\'/IP_use_media | image | ipaddress\' \n\nWhere \'ipaddress\' is the IP Address assigned to your WiFi Sensor.'
+            if media.lower() == 'video':
+              if validate_ip(ip):
+                response = updateWifiRegister(1,ip,'v','iOrv')
+                state = response[0]
+                sensorName = response[1]
+                vidLength = response[2]
+                camType = response[3]
+                if camType == None:
+                  state = 'C'
+                camIP = response[4]
+                if state == '1':
+                  if camType == 'ipcam':
+                    msg = sensorName+' ['+ip+'] will send '+str(vidLength)+' Sec videos from '+camType+' '+camIP+' on sensor trigger!!'
+                  else:
+                    msg = sensorName+' ['+ip+'] will send '+str(vidLength)+' Sec videos from '+camType+' on sensor trigger!!'
+                elif state == 'A':
+                  if camType == 'ipcam':
+                    msg = sensorName+' ['+ip+'] is already configured to send videos from '+camType+' '+camIP+' on sensor trigger!!'
+                  else:
+                    msg = sensorName+' ['+ip+'] is already configured to send videos from '+camType+' on sensor trigger!!'
+                elif state == '0':
+                  msg = 'The IP did not match any registered WiFi Sensors. Please confirm the IP and try again, you entered: \''+ip+'\' as your WiFi Sensor IP Address.'
+                elif state == 'C':
+                  msg = "Please configure the camera type to use first. Use the following command: \n\n'/IP_use_camera | cameratype | sensorIP | cameraIP'."
+                else:
+                  msg = 'Operation failed, please try again..'
+              else:
+                msg = 'Please provide a valid IP Address.'+correctFmt
+            elif media.lower() == 'image':
+              if validate_ip(ip):
+                response = updateWifiRegister(1,ip,'i','iOrv')
+                state = response[0]
+                sensorName = response[1]
+                camType = response[3]
+                if camType == None:
+                  state = 'C'
+                camIP = response[4]
+                if state == '1':
+                  if camType == 'ipcam':
+                    msg = sensorName+' ['+ip+'] will send images from '+camType+' '+camIP+' on sensor trigger!!'
+                  else:
+                    msg = sensorName+' ['+ip+'] will send images from '+camType+' on sensor trigger!!'
+                elif state == 'A':
+                  if camType == 'ipcam':
+                    msg = sensorName+' ['+ip+'] is already configured to send images from '+camType+' '+camIP+' on sensor trigger!!'
+                  else:
+                    msg = sensorName+' ['+ip+'] is already configured to send images from '+camType+' on sensor trigger!!'
+                elif state == '0':
+                  msg = 'The IP did not match any registered WiFi Sensors. Please confirm the IP and try again, you entered: \''+ip+'\' as your WiFi Sensor IP Address.'
+                elif state == 'C':
+                  msg = "Please configure the camera type to use first. Use the following command: \n\n/'IP_use_camera | cameratype | sensorIP | cameraIP'."
+                else:
+                  msg = 'Operation failed, please try again..'
+              else:
+                msg = 'Please provide a valid IP Address.'+correctFmt
+            else:
+              msg = 'Please specify either image or video and WiFi Sensor IP Address in your syntax.'+correctFmt
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
+
+        elif '/nrf_set_videolength' in commandL:
+            try:
+              length = commandS[1]
+              localID = commandS[2]
               error = 0
             except Exception as e:
               error = 1
+            correctFmt = "The correct format is: \n\n'/NRF_set_videolength | seconds | localID' \n\nWhere 'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
             if error == 0:
               minTime = 3
               maxTime = 60
@@ -527,30 +673,73 @@ def action(msg):
                     else:
                       msg = sensorName+' ['+localID+'] is already configured to send '+str(length)+' Sec videos from '+camType+' on sensor trigger if video mode is selected!!'
                   elif state == '0':
-                    msg = 'That ID is not registered.Please confirm the ID and try again, you entered: \''+localID+'\' as your sensorID'
+                    msg = 'That ID is not registered.Please confirm the ID and try again, you entered: \''+localID+'\' as your NRF Sensor localID'
                   else:
                     msg = 'Operation failed, please try again..'
                 else:
-                  msg = "Please provide a valid ID. \nThe correct format is: \n\n\'/Set_videolength_seconds_localID\' \n\nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
+                  msg = "Please provide a valid ID. "+correctFmt
               else:
-                msg = 'Please enter a valid number between '+str(minTime)+' and '+str(maxTime)+' as the video length.\nThe correct format is: \n\n\'/Set_videolength_seconds_localID\' \n\nWhere \'seconds\' is the video length in seconds and \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
+                msg = 'Please enter a valid number between '+str(minTime)+' and '+str(maxTime)+' as the video length. '+correctFmt
             else:
-              msg = 'Use the correct syntax and try again. \nThe correct format is: \n\n\'/Set_videolength_seconds_localID\' \n\nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
+              msg = 'Use the correct syntax and try again. '+correctFmt
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
-        elif '/use_camera_' in commandL:
+        elif '/ip_set_videolength' in commandL:
             try:
-              cam = commandS[2]
-              localID = commandS[3]
+              length = commandS[1]
+              ip = commandS[2]
+              error = 0
+            except Exception as e:
+              error = 1
+            correctFmt = "The correct format is: \n\n'/IP_set_videolength | seconds | ipaddress' \n\nWhere 'ipaddress' is the IP Address assigned to your WiFi Sensor."
+            if error == 0:
+              minTime = 3
+              maxTime = 60
+              lengthValid = validate_vid_length(length,minTime, maxTime)
+              if lengthValid == True:
+                if validate_ip(ip):
+                  response = updateWifiRegister(1,ip,str(length),'vidLength')
+                  state = response[0]
+                  sensorName = response[1]
+                  vidLength = response[2]
+                  camType = response[3]
+                  camIP = response[4]
+                  if state == '1':
+                    if camType.lower() == 'ipcam':
+                      msg = sensorName+' ['+ip+'] will send '+str(length)+' Sec videos from '+camType+' '+camIP+' on sensor trigger when video mode is selected!!'
+                    else:
+                      msg = sensorName+' ['+ip+'] will send '+str(length)+' Sec videos from '+camType+' on sensor trigger when video mode is selected!!'
+                  elif state == 'A':
+                    if camType.lower() == 'ipcam':
+                      msg = sensorName+' ['+ip+'] is already configured to send '+str(length)+' Sec videos from '+camType+' '+camIP+' on sensor trigger if video mode is selected!!'
+                    else:
+                      msg = sensorName+' ['+ip+'] is already configured to send '+str(length)+' Sec videos from '+camType+' on sensor trigger if video mode is selected!!'
+                  elif state == '0':
+                    msg = 'That IP is not registered.Please confirm the IP Address and try again, you entered: '+ip+' as your WiFi Sensor IP Address'
+                  else:
+                    msg = 'Operation failed, please try again..'
+                else:
+                  msg = "Please provide a valid IP Address. "+correctFmt
+              else:
+                msg = 'Please enter a valid number between '+str(minTime)+' and '+str(maxTime)+' as the video length. '+correctFmt
+            else:
+              msg = 'Use the correct syntax and try again. '+correctFmt
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
+        elif '/nrf_use_camera' in commandL:
+            try:
+              cam = commandS[1]
+              localID = commandS[2]
               error = 0
             except Exception as e:
               print e
               error = 1
+            correctFmt = 'The correct format is: \n\n\'/NRF_use_camera | cameratype | localID | ipaddress\' \n\nWhere cameratype is either: usbcam, picam or ipcam.\nIf camera type is ipcam you have to type its ip address in the ipaddress section.\n\'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
             if error == 0:
               if validate_localID(localID):
                 if cam == 'ipcam':
                   try:
-                    ipAddr = commandS[4]
+                    ipAddr = commandS[3]
                     error = 0
                   except Exception as e:
                     print e
@@ -572,7 +761,7 @@ def action(msg):
                     else:
                       msg = 'You have entered an invalid IP Address \''+str(ipAddr)+'\', check the IP Address and try again..'
                   else:
-                    msg = 'Please provide an IP address. The correct format is: \n\n\'/Use_camera_cameratype_localID_ipaddress\''
+                    msg = 'Please provide an IP address. '+correctFmt
                 elif cam == 'usbcam' or cam == 'picam':
                   response = updateNRFRegister(1,localID,cam,'camType')
                   state = response[0]
@@ -586,14 +775,70 @@ def action(msg):
                   else:
                     msg = 'Operation failed, please try again..'
                 else:
-                  msg = 'Please enter a valid camera type. \nThe correct format is: \n\n\'/Use_camera_cameratype_localID_ipaddress\' \n\nWhere cameratype is either: usbcam, picam or ipcam.\nIf camera type is ipcam you have to type its ip address in the ipaddress section.\n\'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
+                  msg = 'Please enter a valid camera type. '+correctFmt
               else:
-                msg = "Please provide a valid ID.  \nThe correct format is: \n\n'/Use_camera_cameratype_localID_ipaddress' \n\nWhere cameratype is either: usbcam, picam or ipcam.\nIf camera type is ipcam you have to type its ip address in the ipaddress section.\n'localID' is the first part of your sensor address e.g VIB001-234567 will have localID 'VIB001'."
+                msg = "Please provide a valid ID. "+correctFmt
             else:
-              msg = 'Please use the correct syntax and try again. \nThe correct format is: \n\n\'/Use_camera_cameratype_localID_ipaddress\' \n\nWhere cameratype is either: usbcam, picam or ipcam.\nIf camera type is ipcam you have to type its ip address in the ipaddress section.\n\'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
+              msg = 'Please use the correct syntax and try again. '+correctFmt
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
-        elif '/capture_' in commandL:
+        elif '/ip_use_camera' in commandL:
+            try:
+              cam = commandS[1]
+              ip = commandS[2]
+              error = 0
+            except Exception as e:
+              print e
+              error = 1
+            correctFmt = 'The correct format is: \n\n\'/IP_use_camera | cameratype | sensorIP | cameraIP\' \n\nWhere cameratype is either: usbcam, picam or ipcam.\nIf camera type is ipcam you have to type its ip address in the cameraIP section.\n\'sensorIP\' is the IP Address assigned to your WiFi Sensor.'
+            if error == 0:
+              if validate_ip(ip):
+                if cam == 'ipcam':
+                  try:
+                    ipAddr = commandS[3]
+                    error = 0
+                  except Exception as e:
+                    print e
+                    error = 1
+                  if error == 0:
+                    validIP = validate_ip(ipAddr)
+                    if validIP == True:
+                      response = updateWifiRegister(2,ip,cam,'camType',ipAddr,'camIP')
+                      state = response[0]
+                      sensorName = response[1]
+                      if state == '1':
+                        msg = sensorName+' ['+ip+'] will use '+cam+' '+ipAddr+' for videos and images'
+                      elif state == 'A':
+                        msg = sensorName+' ['+ip+'] is already configured to use '+cam+' '+ipAddr+' for videos and images'
+                      elif state == '0':
+                        msg = ip+' isn\'t registered, please confirm the sensorIP and try again..'
+                      else:
+                        msg = 'Operation failed, please try again..'
+                    else:
+                      msg = 'You have entered an invalid cameraIP Address '+str(ipAddr)+', check the IP Address and try again. '+correctFmt
+                  else:
+                    msg = 'Please provide the cameraIP address. '+correctFmt
+                elif cam == 'usbcam' or cam == 'picam':
+                  response = updateWifiRegister(1,ip,cam,'camType')
+                  state = response[0]
+                  sensorName = response[1]
+                  if state == '1':
+                    msg = sensorName+' ['+ip+'] will use '+cam+' for videos and images'
+                  elif state == 'A':
+                    msg = sensorName+' ['+ip+'] is already configured to use '+cam+' for videos and images'
+                  elif state == '0':
+                    msg = ip+' isn\'t registered, please confirm the sensorIP and try again..'
+                  else:
+                    msg = 'Operation failed, please try again..'
+                else:
+                  msg = 'Please enter a valid camera type. '+correctFmt
+              else:
+                msg = "Please provide a valid IP Address for sensorIP. "+correctFmt
+            else:
+              msg = 'Please use the correct syntax and try again. '+correctFmt
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
+        elif '/capture' in commandL:
             msg = 'Done!'
             try:
               media = commandS[1]
@@ -602,6 +847,7 @@ def action(msg):
             except Exception as e:
               error = 1
               print e
+            correctFmt = 'The correct format is: \n\n\'/Capture | media | cameratype | seconds | ipaddress\' \n\nWhere media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
             if error == 0:
               if media.lower() == 'video':
                 try:
@@ -636,7 +882,7 @@ def action(msg):
                         else:
                           msg = 'Please provide a valid IP Address. \''+str(ipAddr)+'\' is not a valid ip address.'
                       else:
-                        msg = 'Please provide an IP Address. The correct format is: \n\n\'/Capture_media_cameratype_seconds_ipaddress\' \n\nWhere media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
+                        msg = 'Please provide an IP Address. '+correctFmt
                     elif camType.lower() == 'usbcam':
                       telegram_bot.sendMessage(chat_id, str("Attempting to capture "+str(seconds)+" Sec video from USB camera.."))
                       output = subprocess.call(["sudo", "rm", "/home/pi/Watchman/Videos/usb1camvid.avi"])
@@ -658,11 +904,11 @@ def action(msg):
                       else:
                         telegram_bot.sendMessage(chat_id, str("Video capture from Raspberry Pi camera unsuccessful, please ensure pi camera is installed properly and retry."))
                     else:
-                      msg = 'Please select the right camera type. The correct format is: \n\n\'/Capture_media_cameratype_seconds_ipaddress\' \n\nWhere media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
+                      msg = 'Please select the right camera type. '+correctFmt
                   else:
-                    msg = 'Please enter a valid number between '+str(minTime)+' and '+str(maxTime)+' as the video length. The correct format is: \n\n\'/Capture_media_cameratype_seconds_ipaddress\' \n\nWhere media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
+                    msg = 'Please enter a valid number between '+str(minTime)+' and '+str(maxTime)+' as the video length. '+correctFmt
                 else:
-                  msg = 'Please specify a camera type and the number of seconds you want for video. The correct format is: \n\n\'/Capture_media_cameratype_seconds_ipaddress\' \n\nWhere media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
+                  msg = 'Please specify a camera type and the number of seconds you want for video. '+correctFmt
               elif media.lower() == 'image':
                 if camType.lower() == 'ipcam':
                   try:
@@ -686,7 +932,7 @@ def action(msg):
                     else:
                       msg = 'Please provide a valid IP Address. \''+str(ipAddr)+'\' is not a valid ip address.'
                   else:
-                    msg = 'Please provide an IP Address. The correct format is: \n\n\'/Capture_media_cameratype_seconds_ipaddress\' \n\nWhere media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
+                    msg = 'Please provide an IP Address. '+correctFmt
                 elif camType.lower() == 'usbcam':
                   telegram_bot.sendMessage(chat_id, str("Attempting to capture a photo from USB camera.."))
                   output = subprocess.call(["sudo", "rm", "/home/pi/Watchman/Images/usb1camimg.jpg"])
@@ -708,12 +954,12 @@ def action(msg):
                   else:
                     telegram_bot.sendMessage(chat_id, str("Photo capture from Raspberry Pi camera unsuccessful, please ensure pi camera is installed properly and retry."))
                 else:
-                  msg = 'Please select the right camera type. The correct format is: \n\n\'/Capture_media_cameratype_seconds_ipaddress\' \n\nWhere media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
+                  msg = 'Please select the right camera type. '+correctFmt
                 pass
               else:
-                msg = 'You have entered an invalid media type, please type video or image as media type. The correct format is: \n\n\'/Capture_media_cameratype_seconds_ipaddress\' \n\nWhere media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
+                msg = 'You have entered an invalid media type, please type video or image as media type. '+correctFmt
             else:
-              msg = 'Please provide media type you want to capture and camera type. The correct format is: \n\n\'/Capture_media_cameratype_seconds_ipaddress\' \n\nWhere media is either video or image, cameratype either picam, usbcam or ipcam and seconds the number of seconds if video is selected. If ipcam is selected you have to provide an IP Address in the last section \'ipaddress\'.'
+              msg = 'Please provide media type you want to capture and camera type. '+correctFmt
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
         elif '/nrf_register_sensor' in commandL:
@@ -725,7 +971,7 @@ def action(msg):
               error = 0
             except Exception as e:
               error = 1
-            correctFmt = 'The correct format is: \n\n\'/NRF_register_sensor|nodeID|localID|globalID|description\' \n\nWhere \'nodeID\' is the number in localID address e.g sensor address VIB001-234567 will have nodeID 1. \'localID\' is the first part of sensor address e.g VIB001. \'globalID\' is the second part of your sensor address e.g 234567. \'description \' is the name or description you give to identify your sensor e.g Front door vibration sensor'
+            correctFmt = 'The correct format is: \n\n\'/NRF_register_sensor | nodeID | localID | globalID | description\' \n\nWhere \'nodeID\' is the number in localID address e.g sensor address VIB001-234567 will have nodeID 1. \'localID\' is the first part of sensor address e.g VIB001. \'globalID\' is the second part of your sensor address e.g 234567. \'description \' is the name or description you give to identify your sensor e.g Front door vibration sensor'
             if error == 0:
               if validate_nodeID(nodeID):
                  if validate_localID(localID):
@@ -769,7 +1015,7 @@ def action(msg):
               error = 0
             except Exception as e:
               error = 1
-            correctFmt = 'The correct format is: \n\n\'/IP_register_sensor|ipaddress|description\' \n\nWhere \'ipaddress\' is the IP Address of your sensor. \'description \' is the name or description you give to identify your sensor e.g Lounge area motion sensor'
+            correctFmt = 'The correct format is: \n\n\'/IP_register_sensor | ipaddress | description\' \n\nWhere \'ipaddress\' is the IP Address of your sensor. \'description \' is the name or description you give to identify your sensor e.g Lounge area motion sensor'
             if error == 0:
               if validate_ip(ip):
                 if validate_description(description):
@@ -797,13 +1043,48 @@ def action(msg):
               msg = 'Sensor registration failed. Please use the correct format and fill in every section.'+correctFmt
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
+        elif '/ipcam_register_camera' in commandL:
+            try:
+              ip = commandS[1]
+              description = commandS[2]
+              error = 0
+            except Exception as e:
+              error = 1
+            correctFmt = 'The correct format is: \n\n\'/IPCam_register_camera | ipaddress | description\' \n\nWhere \'ipaddress\' is the IP Address of your camera. \'description \' is the name or description you give to identify your camera e.g Lounge area IP camera'
+            if error == 0:
+              if validate_ip(ip):
+                if validate_description(description):
+                  regTime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                  mariadb_connection = mariadb.connect(user=usr, password=pswd, database=db)
+                  cursor1 = mariadb_connection.cursor()
+                  try:
+                    cursor1.execute("INSERT INTO registeredIPCameras (IP,camName,regDate) VALUES('%s','%s','%s')"%(str(ip),str(description),str(regTime)))
+                    rowCount = cursor1.rowcount
+                    cursor1.close()
+                    mariadb_connection.commit()
+                    if rowCount >= 1:
+                      msg = description+'['+ip+'] has been registered!!'
+                    else:
+                      msg = description+'['+ip+'] has not been registered!! confirm your entries and try again.'
+                  except mariadb.Error as error:
+                    print("Error: {}".format(error))
+                    msg = 'Error occurred. Make sure there is no other camera registered with the same IP Address and try again..'
+                  mariadb_connection.close()
+                else:
+                  msg = 'Please provide a short description or name to identify your camera.'+correctFmt
+              else:
+                msg = 'Please provide a valid IP Address.'+correctFmt
+            else:
+              msg = 'Camera registration failed. Please use the correct format and fill in every section.'+correctFmt
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
         elif '/nrf_remove_sensor' in commandL:
             try:
               localID = commandS[1]
               error = 0
             except:
               error = 1
-            correctFmt = 'The correct format is: \n\'NRF_remove_sensor|localID\' \nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
+            correctFmt = 'The correct format is: \n\'NRF_remove_sensor | localID\' \nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
             if error == 0:
               if validate_localID(localID):
                 mariadb_connection = mariadb.connect(user=usr, password=pswd, database=db)
@@ -847,7 +1128,7 @@ def action(msg):
               error = 0
             except:
               error = 1
-            correctFmt = 'The correct format is: \n\'IP_remove_sensor|ipaddress\' \nWhere \'ipaddress\' is the IP Address of your sensor.'
+            correctFmt = 'The correct format is: \n\'IP_remove_sensor | ipaddress\' \nWhere \'ipaddress\' is the IP Address of your sensor.'
             if error == 0:
               if validate_ip(ip):
                 mariadb_connection = mariadb.connect(user=usr, password=pswd, database=db)
@@ -885,13 +1166,57 @@ def action(msg):
               msg =  'Please provide the IP Address of the WiFi sensor you want to remove.'+correctFmt
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
+        elif '/ipcam_remove_camera' in commandL:
+            try:
+              ip = commandS[1]
+              error = 0
+            except:
+              error = 1
+            correctFmt = 'The correct format is: \n\n\'/IPCam_remove_camera | ipaddress\' \n\nWhere \'ipaddress\' is the IP Address of your camera.'
+            if error == 0:
+              if validate_ip(ip):
+                mariadb_connection = mariadb.connect(user=usr, password=pswd, database=db)
+                cursor1 = mariadb_connection.cursor()
+                try:
+                  cursor1.execute("SELECT * FROM registeredIPCameras WHERE IP = '%s'"%(str(ip)))
+                  result = cursor1.fetchall()
+                  rowCount = len(result)
+                  cursor1.close()
+                  if rowCount >= 1:
+                    for row in result:
+                      sensorName = row[1]
+                      cursor2 = mariadb_connection.cursor()
+                      try:
+                        cursor2.execute("DELETE FROM registeredIPCameras WHERE IP = '%s'"%(str(ip)))
+                        rowCount = cursor2.rowcount
+                        cursor2.close()
+                        mariadb_connection.commit()
+                        if rowCount >= 1:
+                          msg = sensorName+'['+ip+'] has been deleted'
+                        else:
+                          msg = 'Operation failed, please try again.'+correctFmt
+                      except mariadb.Error as error:
+                        print("Error: {}".format(error))
+                        msg = 'Database error occurred. Please retry later.'
+                  else:
+                    msg = 'The IP \''+ip+'\' did not match any registered cameras. Please confirm your IP Address and try again..'
+                except mariadb.Error as error:
+                  print("Error: {}".format(error))
+                  msg = 'Database error occurred. Please retry later.'
+                mariadb_connection.close()
+              else:
+                msg = 'Please type in a valid IP.'+correctFmt
+            else:
+              msg =  'Please provide an IP Address of the camera you want to remove.'+correctFmt
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
         elif '/nrf_show_configuration' in commandL:
             try:
               localID = commandS[1]
               error = 0
             except:
               error = 1
-            correctFmt = 'The correct format is: \n\n\'/NRF_show_configuration|localID\' \n\nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
+            correctFmt = 'The correct format is: \n\n\'/NRF_show_configuration | localID\' \n\nWhere \'localID\' is the first part of your sensor address e.g VIB001-234567 will have localID \'VIB001\'.'
             if error == 0:
               if validate_localID(localID):
                 mariadb_connection = mariadb.connect(user=usr, password=pswd, database=db)
@@ -969,7 +1294,7 @@ def action(msg):
               error = 0
             except:
               error = 1
-            correctFmt = 'The correct format is: \n\n\'/IP_show_configuration|ipaddress\' \n\nWhere \'ipaddress\' is the IP Address of your WiFi sensor.'
+            correctFmt = 'The correct format is: \n\n\'/IP_show_configuration | ipaddress\' \n\nWhere \'ipaddress\' is the IP Address of your WiFi sensor.'
             if error == 0:
               if validate_ip(ip):
                 mariadb_connection = mariadb.connect(user=usr, password=pswd, database=db)
@@ -1117,8 +1442,60 @@ def action(msg):
             mariadb_connection.close()
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
+        elif '/show_available_camera' in commandL:
+            output = subprocess.call(["sudo", "rm", "/home/pi/Watchman/Images/usb1camimg.jpg"])
+            output = subprocess.call(["sudo", "/home/pi/Watchman/Images/takeUSB1CamImg.sh", "/home/pi/Watchman/Images/usb1camimg.jpg"])
+            fileExists = os.path.exists('/home/pi/Watchman/Images/usb1camimg.jpg')
+            if fileExists == True:
+              usbcam = 'available'
+            else:
+              usbcam = 'offline'
+            output = subprocess.call(["sudo", "rm", "/home/pi/Watchman/Images/picamimg.jpg"])
+            output = subprocess.call(["sudo", "/home/pi/Watchman/Images/takePiCamImg.sh", "/home/pi/Watchman/Images/picamimg.jpg"])
+            fileExists = os.path.exists('/home/pi/Watchman/Images/picamimg.jpg')
+            if fileExists == True:
+              picam = 'available'
+            else:
+              picam = 'offline'
+            mariadb_connection = mariadb.connect(user=usr, password=pswd, database=db)
+            cursor1 = mariadb_connection.cursor()
+            try:
+              cursor1.execute("SELECT * FROM registeredIPCameras")
+              result = cursor1.fetchall()
+              rowCount = len(result)
+              cursor1.close()
+              msg = 'Cameras:\n'
+              msg += "1. Raspberry Pi Camera [picam]["+picam+"]\n\n"
+              msg += "2. USB Camera [usbcam]["+usbcam+"]"
+              if rowCount >= 1:
+                count = 2
+                for row in result:
+                  count += 1
+                  ip = row[0]
+                  sensorName = row[1]
+                  active = row[2]
+                  lastSeen = row[3]
+                  if active == 1:
+                    if lastSeen != None:
+                      msg += '\n\n'+str(count)+'. IP Camera[ipcam]['+ip+'][Active] '+sensorName+'. Last seen: '+str(lastSeen)
+                    else:
+                      msg += '\n\n'+str(count)+'. IP Camera[ipcam]['+ip+'][Active] '+sensorName+'.'
+                  else:
+                    if lastSeen != None:
+                      msg += '\n\n'+str(count)+'. IP Camera[ipcam]['+ip+'][Offline] '+sensorName+'. Last seen: '+str(lastSeen)
+                    else:
+                      msg += '\n\n'+str(count)+'. IP Camera[ipcam]['+ip+'][Offline] '+sensorName+'.'
+              else:
+                msg += '\n\nYou have no registered IP cameras'
+            except mariadb.Error as error:
+              print("Error: {}".format(error))
+              msg = 'Database error occurred. Please retry later.'
+            mariadb_connection.close()
+            telegram_bot.sendMessage(chat_id, str(msg))
+            pass
         elif commandL == '/stop':
             response = updateNRFRegister(0,'*',0,'sendAlert')
+            response2 = updateWifiRegister(0,'*',0,'sendAlert')
             state = response[0]
             sensorName = response[1]
             if state == '1':
@@ -1146,7 +1523,7 @@ def action(msg):
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
         elif commandL == '/temperature':
-            t=float(subprocess.check_output(["/opt/vc/bin/vcgencmd measure_temp | cut -c6-9"], shell=True)[:-1])
+            t=float(subprocess.check_output(["/opt/vc/bin/vcgencmd measure_temp  |  cut -c6-9"], shell=True)[:-1])
             ts=str(t)
             answer = 'My temperature is '+ts+' °C'
             telegram_bot.sendMessage (chat_id, str(answer))
