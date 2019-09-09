@@ -9,11 +9,24 @@ import random
 import socket
 import mysql.connector as mariadb
 import MySQLdb
+from ConfigParser import SafeConfigParser
 
+config = SafeConfigParser()
+config.read('/home/pi/Watchman/TelegramBot/TelegramBotConfig.ini')
+
+username = config.get('credentials', 'username')
+chat_id = config.get('credentials', 'chatid')
+token = config.get('credentials', 'token')
+
+authorizedUser = username
 now = datetime.datetime.now()
-usr = 'watch'
-pswd = 'mawe'
-db = 'watchman'
+
+config2 = SafeConfigParser()
+config2.read('/home/pi/Watchman/sqldb/sqlCredentials.ini')
+
+usr = config2.get('credentials', 'username')
+pswd = config2.get('credentials', 'password')
+db = config2.get('credentials', 'database')
 
 def updateNRFRegister(numOfValues,localID,value1,column1,value2=None,column2=None,value3=None,column3=None,value4=None,column4=None):
   mariadb_connection = mariadb.connect(user=usr, password=pswd, database=db)
@@ -172,9 +185,13 @@ def action(msg):
     f.close()
 
     if username == authorizedUser:
-        file = open("/home/pi/Watchman/TelegramBot/chatId.txt","w+")
-        file.write(str(chat_id))
-        file.close()
+
+        configS = SafeConfigParser()
+        configS.read('/home/pi/Watchman/TelegramBot/TelegramBotConfig.ini')
+        configS.set('credentials','chatid', str(chat_id))
+        with open('/home/pi/Watchman/TelegramBot/TelegramBotConfig.ini', 'w') as configfile:
+          configS.write(configfile)
+
         command = msg['text']
         commandL = command.lower()
         commandC = command.replace(" ","")
@@ -1579,9 +1596,6 @@ if status == '1':
     print '['+ts + '] bot already running!!'
     exit()
 
-t = open("/home/pi/Watchman/TelegramBot/token.txt","r")
-token = t.read()
-t.close()
 token = token.strip()
 
 telegram_bot = telepot.Bot(token)

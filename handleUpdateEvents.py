@@ -6,6 +6,14 @@ import MySQLdb
 import subprocess
 import time
 from datetime import datetime
+from ConfigParser import SafeConfigParser
+
+config = SafeConfigParser()
+config.read('/home/pi/Watchman/sqldb/sqlCredentials.ini')
+
+usr = config.get('credentials', 'username')
+pswd = config.get('credentials', 'password')
+db = config.get('credentials', 'database')
 
 nodeID = sys.argv[1]
 state = sys.argv[2]
@@ -14,7 +22,7 @@ stateInt = int(state)
 time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 previousState = 1
 
-mariadb_connection = mariadb.connect(user='watch', password='mawe',database='watchman')
+mariadb_connection = mariadb.connect(user=usr, password=pswd,database=db)
 cursor = mariadb_connection.cursor()
 cursor2 = mariadb_connection.cursor()
 

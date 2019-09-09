@@ -1,17 +1,15 @@
 #!/usr/bin/env python
 import telepot
 import sys
+from ConfigParser import SafeConfigParser
 
-f = open("/home/pi/Watchman/TelegramBot/chatId.txt","r")
-chat_id = f.read()
-f.close()
-#print chat_id
+config = SafeConfigParser()
+config.read('/home/pi/Watchman/TelegramBot/TelegramBotConfig.ini')
 
-t = open("/home/pi/Watchman/TelegramBot/token.txt","r")
-token = t.read()
-t.close()
-token = token.strip()
-#print token
+username = config.get('credentials', 'username')
+chat_id = config.get('credentials', 'chatid')
+token = config.get('credentials', 'token')
+
 
 picPath = str(sys.argv[1])
 #print picPath

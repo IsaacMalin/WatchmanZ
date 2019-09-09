@@ -1,11 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 import sys
-import subprocess
-import RPi.GPIO as GPIO
-import time
-from datetime import datetime
 import mysql.connector as mariadb
 import MySQLdb
+import subprocess
+import time
+from datetime import datetime
 from ConfigParser import SafeConfigParser
 
 config = SafeConfigParser()
@@ -15,41 +14,32 @@ usr = config.get('credentials', 'username')
 pswd = config.get('credentials', 'password')
 db = config.get('credentials', 'database')
 
+msg = sys.argv[1]
+msgSplit = msg.split('^')
 
-blueLed = 15
-GPIO.setmode(GPIO.BOARD)
-GPIO.setup(blueLed, GPIO.OUT, initial = 0)
-nodeID = sys.argv[1]
-msgType = sys.argv[2]
-authorizeVibMsg = 0
-sensorMsg = ' '
+ip = msgSplit[0]
+alertMsg = msgSplit[1]
 
-ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+print 'IP: '+ip+' reports msg: '+alertMsg
 
-if msgType == 'V':
-  print '['+ts+'] Vibration detected!!'
-elif msgType == 'M':
-  print '['+ts+'] Motion detected!!'
-else:
-  print '['+ts+'] Sensor alert detected!!'
+time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 mariadb_connection = mariadb.connect(user=usr, password=pswd,database=db)
 cursor = mariadb_connection.cursor()
 sendAlert = 0
 
 try:
-  cursor.execute("SELECT * FROM registeredNRFSensors WHERE nodeID = "+nodeID)
+  cursor.execute("SELECT * FROM registeredWifiSensors WHERE IP = '"+str(ip)+"'")
   result = cursor.fetchall()
   for row in result:
-    mediaOption = row[9]
-    sendAlert = row[11]
-    sendSms = row[12]
-    vidLength = row[10]
-    localID = row[2]
+    mediaOption = row[7]
+    sendAlert = row[9]
+    sendSms = row[10]
+    vidLength = row[8]
     sensorName = row[1]
-    camType = row[7]
-    useCam = row[13]
-    camIP = row[8]
+    camType = row[5]
+    useCam = row[11]
+    camIP = row[6]
   cursor.close()
 except mariadb.Error as error:
   print("Error: {}".format(error))
@@ -60,14 +50,7 @@ mariadb_connection.close()
 if sendAlert == 1:
   ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
   ms = datetime.now().strftime("%H:%M:%S")
-  if msgType == 'V':
-    sensorMsg = sensorName+' ['+localID+'] reports vibration detected at '+ms
-    pass
-  elif msgType == 'M':
-    sensorMsg = sensorName+' ['+localID+'] reports motion detected at '+ms
-    pass
-  else:
-    sensorMsg = sensorName+' ['+localID+'] was triggered at '+ms
+  sensorMsg = sensorName+' ['+ip+'] reports '+alertMsg+' at '+ms
   ipath = ' '
   vpath = ' '
   #send message to telegram user
@@ -124,7 +107,3 @@ if sendAlert == 1:
       #send video to telegram user
       print 'Sending video to Telegram..'
       output = subprocess.call(["sudo", "/home/pi/Watchman/TelegramBot/TelegramSendVid.py", vpath])
-
-  #GPIO.output(switchIR, GPIO.LOW)
-GPIO.output(blueLed,GPIO.LOW)
-GPIO.cleanup()

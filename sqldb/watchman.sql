@@ -29,6 +29,8 @@ CREATE TABLE `registeredIPCameras` (
   `lastSeen` datetime DEFAULT NULL,
   `regDate` datetime DEFAULT NULL,
   `camType` varchar(10) DEFAULT NULL,
+  `batt` varchar(4) DEFAULT NULL,
+  `deviceType` varchar(2) NOT NULL DEFAULT 'C',
   PRIMARY KEY (`IP`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -55,6 +57,7 @@ CREATE TABLE `registeredNRFSensors` (
   `sendAlert` tinyint(1) NOT NULL DEFAULT '0',
   `sendSms` tinyint(1) NOT NULL DEFAULT '0',
   `useCam` tinyint(1) NOT NULL DEFAULT '0',
+  `batt` varchar(4) DEFAULT NULL,
   PRIMARY KEY (`nodeID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -79,6 +82,8 @@ CREATE TABLE `registeredWifiSensors` (
   `sendAlert` tinyint(1) NOT NULL DEFAULT '0',
   `sendSms` tinyint(1) NOT NULL DEFAULT '0',
   `useCam` tinyint(1) NOT NULL DEFAULT '0',
+  `batt` varchar(4) DEFAULT NULL,
+  `deviceType` varchar(2) NOT NULL DEFAULT 'S',
   PRIMARY KEY (`IP`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -92,4 +97,4 @@ CREATE TABLE `registeredWifiSensors` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-08-28 15:20:49
+-- Dump completed on 2019-09-09 14:28:59
