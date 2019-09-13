@@ -31,7 +31,7 @@ try:
     else:
       continue
     if timeDifference.total_seconds() > 130:
-      msg = ip+'^'+name+'^'+deviceType+'^U^0^0'
+      msg = ip+'^'+name+'^'+deviceType+'^D^0^0'
       #print msg
       subprocess.call(['sudo','/home/pi/Watchman/mqtt/handleMqttSensorUpdates.py',msg])
 

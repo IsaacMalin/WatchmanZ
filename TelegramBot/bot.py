@@ -14,11 +14,10 @@ from ConfigParser import SafeConfigParser
 config = SafeConfigParser()
 config.read('/home/pi/Watchman/TelegramBot/TelegramBotConfig.ini')
 
-username = config.get('credentials', 'username')
+authorizedUser = config.get('credentials', 'username')
 chat_id = config.get('credentials', 'chatid')
 token = config.get('credentials', 'token')
 
-authorizedUser = username
 now = datetime.datetime.now()
 
 config2 = SafeConfigParser()
@@ -179,10 +178,6 @@ def validate_description(d):
 def action(msg):
     chat_id = msg['chat']['id']
     username = str(msg['chat']['first_name'])
-    f = open("/home/pi/Watchman/TelegramBot/username.txt", "r")
-    authorizedUser = f.read()
-    authorizedUser = authorizedUser.strip()
-    f.close()
 
     if username == authorizedUser:
 

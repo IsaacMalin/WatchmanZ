@@ -65,14 +65,24 @@ except:
   print 'IP Address '+ip+' did not match anything'
   exit()
 
-try:
-  if deviceType == 'S':
-    cursor.execute("UPDATE registeredWifiSensors SET active = '%s', lastSeen = '%s', batt = '%s' WHERE IP = '%s'"%(state,time,battLevel,ip))
-  elif deviceType == 'C':
-    cursor.execute("UPDATE registeredIPCameras SET active = '%s', lastSeen = '%s', batt = '%s' WHERE IP = '%s'"%(state,time,battLevel,ip))
-  cursor.close()
-except Error:
-  print("Error: {}".format(error))
+if event == 'D':
+  try:
+    if deviceType == 'S':
+      cursor.execute("UPDATE registeredWifiSensors SET active = '%s' WHERE IP = '%s'"%(state,ip))
+    elif deviceType == 'C':
+      cursor.execute("UPDATE registeredIPCameras SET active = '%s' WHERE IP = '%s'"%(state,ip))
+    cursor.close()
+  except Error:
+    print("Error: {}".format(error))
+elif event == 'U':
+  try:
+    if deviceType == 'S':
+      cursor.execute("UPDATE registeredWifiSensors SET active = '%s', lastSeen = '%s', batt = '%s' WHERE IP = '%s'"%(state,time,battLevel,ip))
+    elif deviceType == 'C':
+      cursor.execute("UPDATE registeredIPCameras SET active = '%s', lastSeen = '%s', batt = '%s' WHERE IP = '%s'"%(state,time,battLevel,ip))
+    cursor.close()
+  except Error:
+    print("Error: {}".format(error))
 
 mariadb_connection.commit()
 mariadb_connection.close()
