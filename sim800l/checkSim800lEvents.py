@@ -1,6 +1,33 @@
+#!/usr/bin/env python
 import os,time,sys
 import serial
 import time
+from datetime import datetime
+import paho.mqtt.client as mqtt
+
+def on_message(client, userdata, message):
+    msg = str(message.payload.decode("utf-8"))
+    topic = message.topic
+    qos = message.qos
+    retainFlag = message.retain
+    print("message received " ,msg)
+    print("message topic=",topic)
+    print("message qos=",qos)
+    print("message retain flag=",retainFlag)
+    if topic == 'closeCheckSimEvents':
+      global exit
+      exit = True
+    elif topic == 'sendSMS':
+      msg = msg.split('^')
+      destno = msg[0]
+      msgtext = msg[1]
+      print 'Sending SMS to '+destno
+      result = send_sms(destno,msgtext)
+      #if not 'OK' in result:
+        #callAdmin()
+    elif topic == 'callNumber':
+      print 'Calling Number '+msg
+      call_number(msg)
 
 def convert_to_string(buf):
     try:
@@ -14,9 +41,9 @@ def convert_to_string(buf):
         return bytes(tmp).decode('utf-8').strip()
 
         try:
-            ser=serial.Serial("/dev/serial0", baudrate=9600, timeout=1)
+            ser=serial.Serial("/dev/ttyAMA0", baudrate=115200, timeout=2)
         except Exception as e:
-            sys.exit("Error: {}".format(e))
+            exitScript(e)
 
 def setup():
   command('ATE0\n')         # command echo off
@@ -71,6 +98,18 @@ def read_sms(id):
                 return  [number,date,time,savbuf]
     return None
 
+def call_number(num):
+    command('AT+MORING=1\r\n')
+    command('ATD'+str(num)+';\r\n')
+
+def alive():
+    for x in range(1,6):
+      print str(x)+' checking sim800l..'
+      result = command('AT\n')
+      if result != None:
+        if 'OK' in result:
+          return True
+    return False
 def delete_sms(id):
     command('AT+CMGD={}\n'.format(id),1)
 
@@ -96,16 +135,73 @@ def check_incoming():
         elif params[0] == "RING" or params[0][0:5] == "+CLIP":
             #@todo handle
             pass
+def exitScript(e = 'Closing Script'):
+  ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+  print '['+ts+']'+e
+  c = open("/home/pi/Watchman/sim800l/checkSim800lEvents.txt","w+")
+  status = c.write('0')
+  c.close()
+  sys.exit()
 
+#######################################################################################
+print("Starting checkSim800lEvents script..")
+#check if script is already running
+try:
+  c = open("/home/pi/Watchman/sim800l/checkSim800lEvents.txt","r")
+  status = c.read()
+  status = status.strip()
+  c.close()
+except Exception as e:
+  print 'txt file not found, txt file generated..'
+  exitScript(e)
+if status == '1':
+  ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+  print'['+ts+'] checkSim800lEvents already running!!'
+  sys.exit()
 
-savbuf = ''
+c = open("/home/pi/Watchman/sim800l/checkSim800lEvents.txt","w")
+status = c.write('1')
+c.close()
+
 try:
   ser=serial.Serial("/dev/ttyAMA0", baudrate=115200, timeout=2)
 except Exception as e:
-  sys.exit("Error: {}".format(e))
-setup()
-print 'checkSim800lEvents initialized..'
+  exitScript(e)
 
-while True:
-  check_incoming()
-  time.sleep(1)
+print 'Looking for Sim800l..'
+if alive():
+  print 'Sim800l is alive..'
+else:
+  exitScript('No response closing script..')
+
+try:
+  broker_address="localhost"
+  print("Starting closeCheckSimEvents listener")
+  client = mqtt.Client("Sim800lScript") #create new instance
+  client.on_message=on_message #attach function to callback
+  print("connecting to broker")
+  client.connect(broker_address) #connect to broker
+  client.loop_start() #start the loop
+  #subscribe to interesting topics..
+  print("Subscribing to topic","closeCheckSimEvents","sendSMS","callNumber")
+  client.subscribe("closeCheckSimEvents")
+  client.subscribe("sendSMS")
+  client.subscribe("callNumber")
+
+except Exception as e:
+  print 'Failed to initialize mqtt listner..'
+  exitScript(e)
+
+savbuf = ''
+exit = False
+
+print 'checkSim800lEvents initialized..'
+setup()
+try:
+  while True:
+    if exit:
+      exitScript('Closing checkSim800lEvents.py script!!')
+    check_incoming()
+    time.sleep(1)
+except Exception as e:
+  exitScript(e)

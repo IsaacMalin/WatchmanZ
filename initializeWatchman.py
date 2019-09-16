@@ -6,7 +6,7 @@ c = open("/home/pi/Watchman/TelegramBot/isBotRunning.txt","w+")
 status = c.write('0')
 c.close()
 
-s = open("/home/pi/Watchman/checkEvents.txt","w+")
+s = open("/home/pi/Watchman/sim800l/checkSim800lEvents.txt","w+")
 status = s.write('0')
 s.close()
 

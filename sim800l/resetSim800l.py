@@ -13,6 +13,6 @@ GPIO.output(resetPin, GPIO.LOW)
 time.sleep(1/100)
 GPIO.output(resetPin, GPIO.HIGH)
 
-print "STM32 has been reset!"
+print "Sim800l has been reset!"
 
 GPIO.cleanup()

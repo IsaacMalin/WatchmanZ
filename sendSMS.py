@@ -1,23 +1,14 @@
 #!/usr/bin/python
 import sys
-import serial
+import subprocess
+import time
 
+adminNum = '0723942375'
 sms = sys.argv[1]
 print 'sending sms...'
 
-#create serial object
-serial = serial.Serial(
-  port='/dev/ttyAMA0',
-  baudrate = 115200,
-  parity=serial.PARITY_NONE,
-  stopbits=serial.STOPBITS_ONE,
-  bytesize=serial.EIGHTBITS,
-  timeout=5
-)
+subprocess.Popen(['sudo','/home/pi/Watchman/sim800l/checkSim800lEvents.py'])
+time.sleep(5)
+subprocess.call(['sudo','/home/pi/Watchman/mqtt/mqttPub.py','sendSMS',adminNum+'^'+str(sms)])
 
-#construct message
-msg = "+G^"+sms
-serial.write(msg)
-serial.close()
-print "msg fowarded to STM32.."
 
