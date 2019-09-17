@@ -2,6 +2,7 @@
 import telepot
 import sys
 import subprocess
+import time
 from ConfigParser import SafeConfigParser
 
 config = SafeConfigParser()
@@ -26,11 +27,8 @@ except Exception as e:
     c = open("/home/pi/Watchman/AudioMsgs/immediateMsg.txt","w+")
     c.write(msg)
     c.close()
-
     p = open("/home/pi/Watchman/AudioMsgs/pendingMsgs.txt","a+")
     p.write(msg+', ')
     p.close()
 
-
-    output = subprocess.Popen(["sudo", "/home/pi/Watchman/sendSMS.py", msg+"\n(Sending via Telegram Failed!)"])
-
+    output = subprocess.Popen(["sudo", "/home/pi/Watchman/sendSMS.py", msg+"\n(Telegram Not Available, Check WiFi!)"])
