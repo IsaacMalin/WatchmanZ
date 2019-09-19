@@ -39,7 +39,7 @@ def convert_to_string(buf):
         return bytes(tmp).decode('utf-8').strip()
 
         try:
-            ser=serial.Serial("/dev/ttyAMA0", baudrate=115200, timeout=2)
+            ser=serial.Serial("/dev/ttyAMA0", baudrate=9600, timeout=2)
         except Exception as e:
             exitScript(e)
 
@@ -73,15 +73,40 @@ def command(cmdstr, lines=1, waitfor=500, msgtext=None):
             buf = convert_to_string(buf)
             if not buf == '' and not buf == 'OK':
                 savbuf += buf+'\n'
+                #print('savbuf: {}'.format(savbuf))
     return result
 
 def send_sms(destno,msgtext):
-    result = command('AT+CMGS="{}"\n'.format(destno),99,5000,msgtext+'\x1A')
-    if result and result=='>' and savbuf:
-        params = savbuf.split(':')
-        if params[0]=='+CUSD' or params[0] == '+CMGS':
-            return 'OK'
-    return 'ERROR'
+  global sendingSms
+  if not sendingSms:
+    sendingSms = True
+    if alive(3):
+      global _buffer
+      _buffer = ''
+      ser.write('AT+CMGS="{}"\n'.format(destno))
+      time.sleep(2)
+      ser.write(msgtext.encode()+'\x1A\r\n')
+      count = 0
+      buf = ''
+      while len(_buffer) < 4 and len(buf) < 4:
+        count += 1
+        if count > 9:
+          break
+        buf = ser.readline()
+        print str(count)+'. Waiting for response..'+str(len(_buffer))+' '+str(len(buf))
+        time.sleep(1)
+      if ('+CMGS' or '+CUSD' in _buffer) or ('+CMGS' or '+CUSD' in buf):
+        sendingSms = False
+        return 'OK'
+      else:
+        print 'SMS not sent!'
+        sendingSms = False
+        return 'error'
+      #result = command('AT+CMGS="{}"\n'.format(destno),99,5000,msgtext+'\x1A')
+    else:
+      subprocess.call(['sudo','/home/pi/Watchman/sim800l/resetSim800l.py'])
+      sendingSms = False
+      return 'No Response'
 
 def send_msg(msg):
     print 'Sending SMS..'
@@ -90,11 +115,11 @@ def send_msg(msg):
       print 'failed, calling admin..'
       global msgToAdmin
       msgToAdmin = "Sending text message failed. Airtime balance may be depleted. Try loading more airtime."
-      command('\r\n')
-      if alive():
+      if alive(6):
         call_number(reverseCallAdmin)
       else:
-        print 'Error in GSM Module'
+        print 'No GSM Module found!!'
+        subprocess.call(['sudo','/home/pi/Watchman/sim800l/resetSim800l.py'])
     else:
       print 'SMS sent!'
 
@@ -124,8 +149,11 @@ def call_number(num):
     command('AT+MORING=1\r\n')
     command('ATD'+num+';\r\n')
 
-def alive():
-    for x in range(1,6):
+def alive(n):
+    for x in range(1,n+1):
+      if x == 5:
+        subprocess.call(['sudo','/home/pi/Watchman/sim800l/resetSim800l.py'])
+        time.sleep(5)
       print str(x)+' checking sim800l..'
       result = command('AT\n')
       if result != None:
@@ -221,21 +249,29 @@ def playMsgIfUserCalled():
 
 def check_incoming():
     if ser.in_waiting:
-        buf=ser.readline()
+        buf = ''
+        while ser.in_waiting:
+          buf+=ser.readline()
         print(buf)
+        global _buffer
         buf = convert_to_string(buf)
+        _buffer = buf
         params=buf.split(',')
+        global savbuf
+        savbuf = ''
 
         if params[0][0:5] == "+CMTI":
             msgid = int(params[1])
             smsdata = read_sms(msgid)
-            sender = smsdata[0]
-            print sender
-            sms = smsdata[1]
-            global savbuf
-            savbuf = ''
+            try:
+              sender = smsdata[0]
+              sms = smsdata[1]
+            except Exception as e:
+              print 'Error: {}'.format(e)
+              return
             if msgid > 65:
               delete_all_sms()
+            print sender
             print sms
             if admin[-9:] == sender.strip()[-9:]:
               splitSms = sms.split('|')
@@ -243,14 +279,17 @@ def check_incoming():
                 ussd = splitSms[1]
                 ussd = ussd.strip()
                 send_ussd(ussd)
+              elif 'config_commands' in sms:
+                send_msg('Config Commands:\n1.Connect_wifi\n2.Set_admin_number\n3.Set_callback_number\n4.Set_telegram_username\n5.Set_telegram_token\n6.Set_sensorIP\n7.Set_gateway_static_IP')
               else:
-                send_msg('Use the following commands:\n1.Ussd|*144# - Check Balance')
+                send_msg('Use the following commands:\n1.Start\n2.Stop\n3.Reboot\n4.Ussd|*144#\n5.Check_config\n6.Show_config_commands')
             else:
               subprocess.call(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendMsg.py',str(sms),'1'])
             pass
         elif params[0][0:5] == '+CUSD':
             try:
-              send_msg(params[1])
+              msg = buf.split('"')
+              send_msg(msg[1])
             except Exception as e:
               print("Error: {}".format(e))
             pass
@@ -299,12 +338,12 @@ status = c.write('1')
 c.close()
 
 try:
-  ser=serial.Serial("/dev/ttyAMA0", baudrate=115200, timeout=2)
+  ser=serial.Serial("/dev/ttyAMA0", baudrate=9600, timeout=2)
 except Exception as e:
   exitScript(e)
 
 print 'Looking for Sim800l..'
-if alive():
+if alive(10):
   print 'Sim800l is alive..'
 else:
   exitScript('No response closing script..')
@@ -328,6 +367,8 @@ except Exception as e:
   exitScript(e)
 
 savbuf = ''
+_buffer = ''
+sendingSms = False
 exit = False
 callingAdmin = False
 REMOTE_SERVER = 'www.google.com'
