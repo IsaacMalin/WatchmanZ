@@ -4,8 +4,11 @@ import serial
 import time
 import subprocess
 import socket
+import telepot
 from datetime import datetime
 import paho.mqtt.client as mqtt
+from ConfigParser import SafeConfigParser
+
 
 def on_message(client, userdata, message):
     msg = str(message.payload.decode("utf-8"))
@@ -110,18 +113,20 @@ def send_sms(destno,msgtext):
 
 def send_msg(msg):
     print 'Sending SMS..'
-    result = send_sms(admin,msg)
-    if not 'OK' in result:
-      print 'failed, calling admin..'
-      global msgToAdmin
-      msgToAdmin = "Sending text message failed. Airtime balance may be depleted. Try loading more airtime."
-      if alive(6):
-        call_number(reverseCallAdmin)
+    if len(str(admin)) > 2:
+      result = send_sms(admin,msg)
+      if not 'OK' in result:
+        print 'failed, calling admin..'
+        global msgToAdmin
+        msgToAdmin = "Sending text message failed. Airtime balance may be depleted. Try loading more airtime."
+        if alive(6):
+          if len(str(reverseCallAdmin)) > 2:
+            call_number(reverseCallAdmin)
+        else:
+          print 'No GSM Module found!!'
+          subprocess.call(['sudo','/home/pi/Watchman/sim800l/resetSim800l.py'])
       else:
-        print 'No GSM Module found!!'
-        subprocess.call(['sudo','/home/pi/Watchman/sim800l/resetSim800l.py'])
-    else:
-      print 'SMS sent!'
+        print 'SMS sent!'
 
 def send_ussd(ussd):
   result = command('AT+CUSD=1,\"'+str(ussd)+'\",15\r')
@@ -179,6 +184,37 @@ def checkInternet(hostname):
   except:
      pass
   return False
+
+def validate_ip(s):
+    a = s.split('.')
+    if len(a) != 4:
+        return False
+    for x in a:
+        if not x.isdigit():
+            return False
+        i = int(x)
+        if i < 0 or i > 255:
+            return False
+    return True
+
+def validate_phoneNo(no):
+    num = str(no)
+    num = num.replace("+","")
+    num = num.replace("#","")
+    num = num.replace("*","")
+    numlen = len(num)
+    if numlen < 8:
+        return False
+    if not num.isdigit():
+        return False
+    return True
+
+def validate_token(tn):
+    tok = str(tn)
+    toklen = len(tok)
+    if toklen < 30:
+        return False
+    return True
 
 #method to play audio messages to admin if we call the admin
 def playMsgIfCallingUser():
@@ -259,7 +295,7 @@ def check_incoming():
         params=buf.split(',')
         global savbuf
         savbuf = ''
-
+        #print 'Params: '+params[0]
         if params[0][0:5] == "+CMTI":
             msgid = int(params[1])
             smsdata = read_sms(msgid)
@@ -273,18 +309,192 @@ def check_incoming():
               delete_all_sms()
             print sender
             print sms
+            global admin
+            if len(str(admin)) < 2:
+              admin = sender
             if admin[-9:] == sender.strip()[-9:]:
               splitSms = sms.split('|')
+              global callingAdmin
               if 'ssd|' in sms:
                 ussd = splitSms[1]
                 ussd = ussd.strip()
                 send_ussd(ussd)
+                pass
               elif 'config_commands' in sms:
                 send_msg('Config Commands:\n1.Connect_wifi\n2.Set_admin_number\n3.Set_callback_number\n4.Set_telegram_username\n5.Set_telegram_token\n6.Set_sensorIP\n7.Set_gateway_static_IP')
+                pass
+              elif 'et_admin_n' in sms:
+                correctFmt = 'The correct format is:\n\nSet_admin_number|phoneNo'
+                adminNo = ''
+                msg = ''
+                error = 0
+                try:
+                  splitsms = sms.split('|')
+                  adminNo = splitsms[1].strip()
+                except:
+                  error = 1
+                if error == 0:
+                  if validate_phoneNo(adminNo):
+                    subprocess.call(['sudo','/home/pi/Watchman/saveWatchmanConfig.py','admin_no',str(adminNo)])
+                    msg='Admin Number has been updated.'
+                  else:
+                    msg='Please type a valid phone number.\n'+correctFmt
+                else:
+                  msg = correctFmt
+                send_msg(msg)
+                pass
+              elif 'et_callback_n' in sms:
+                correctFmt = 'The correct format is:\n\nSet_callback_number|phoneNo'
+                callbackNo = ''
+                msg = ''
+                error = 0
+                try:
+                  splitsms = sms.split('|')
+                  callbackNo = splitsms[1].strip()
+                except:
+                  error = 1
+                if error == 0:
+                  if validate_phoneNo(callbackNo):
+                    subprocess.call(['sudo','/home/pi/Watchman/saveWatchmanConfig.py','callback_no',str(callbackNo)])
+                    msg='Callback Number has been updated.'
+                  else:
+                    msg='Please type a valid phone number.\n'+correctFmt
+                else:
+                  msg = correctFmt
+                send_msg(msg)
+                pass
+              elif 'et_telegram_user' in sms:
+                correctFmt = 'The correct format is:\n\nSet_telegram_username|username'
+                username = ''
+                msg = ''
+                error = 0
+                try:
+                  splitsms = sms.split('|')
+                  username = str(splitsms[1].strip())
+                except:
+                  error = 1
+                if error == 0:
+                  if len(username) >= 1:
+                    subprocess.call(['sudo','/home/pi/Watchman/saveWatchmanConfig.py','username',username])
+                    msg='Telegram recepient username has been updated.'
+                  else:
+                    msg='Please type a valid username.\n'+correctFmt
+                else:
+                  msg = correctFmt
+                send_msg(msg)
+                pass
+              elif 'et_telegram_token' in sms:
+                correctFmt = 'The correct format is:\n\nSet_telegram_token|token'
+                token = ''
+                msg = ''
+                error = 0
+                try:
+                  splitsms = sms.split('|')
+                  token = str(splitsms[1].strip())
+                except:
+                  error = 1
+                if error == 0:
+                  if validate_token(token):
+                    if checkInternet(REMOTE_SERVER):
+                      try:
+                        bot = telepot.Bot(token)
+                        data = bot.getMe()
+                        print data
+                        error = 0
+                      except:
+                        error = 1
+                      if error == 0:
+                        subprocess.call(['sudo','/home/pi/Watchman/saveWatchmanConfig.py','token',token])
+                        subprocess.call(['sudo','/home/pi/Watchman/saveWatchmanConfig.py','chatid','1234'])
+                        subprocess.call(['sudo','/home/pi/Watchman/saveWatchmanConfig.py','username','username'])
+                        msg = 'Token loaded successfully!!'
+                      else:
+                        msg = 'Token was invalid, please confirm token and try again.'
+                    else:
+                      msg='Internet connection needed but is not available, check wifi setup.'
+                  else:
+                    msg='Please provide a valid token.\n'+correctFmt
+                else:
+                  msg = correctFmt
+                send_msg(msg)
+                pass
+              elif 'et_sensorIP' in sms:
+                correctFmt = 'The correct format is:\n\nSet_sensorIP|sensor-ip|gateway-ip'
+                sensorip = ''
+                gatewayip = ''
+                msg = ''
+                error = 0
+                try:
+                  splitsms = sms.split('|')
+                  sensorip = str(splitsms[1].strip())
+                  gatewayip = str(splitsms[2].strip())
+                except:
+                  error = 1
+                if error == 0:
+                  if validate_ip(sensorip) and validate_ip(gatewayip):
+                    if sensorip != gatewayip:
+                      print 'Sensor IP: '+sensorip
+                      print 'Gateway IP: '+gatewayip
+                      #subprocess.call(['sudo','/home/pi/Watchman/configureSensor.py', sensorip, gatewayip])
+                      msg='Sensor has been configured successfully!'
+                    else:
+                      msg = 'Sensor IP and Gateway IP cannot be the same.\n'+correctFmt
+                  else:
+                    msg='Please provide valid IP addresses.\n'+correctFmt
+                else:
+                  msg = correctFmt
+                send_msg(msg)
+                pass
+              elif 'et_gateway_static_' in sms:
+                correctFmt = 'The correct format is:\n\nSet_gateway_static_IP|gatewayIP'
+                ip = ''
+                msg = ''
+                error = 0
+                try:
+                  splitsms = sms.split('|')
+                  ip = str(splitsms[1].strip())
+                except:
+                  error = 1
+                if error == 0:
+                  if validate_ip(ip):
+                    print 'Gateway IP: '+ip
+                    #subprocess.call(['sudo','/home/pi/Watchman/setStaticIP.py',ip])
+                    msg='Gateway static IP has been updated.'
+                  else:
+                    msg='Please provide a valid IP address.\n'+correctFmt
+                else:
+                  msg = correctFmt
+                send_msg(msg)
+                pass
+              elif 'onnect_wifi' in sms:
+                correctFmt = 'The correct format is:\n\nConnect_wifi|ssid|password'
+                ssid = ''
+                pswd = ''
+                msg = ''
+                error = 0
+                try:
+                  splitsms = sms.split('|')
+                  ssid = str(splitsms[1].strip())
+                  pswd = str(splitsms[2].strip())
+                except:
+                  error = 1
+                if error == 0:
+                  if len(ssid) >= 1 and len(pswd) >= 1:
+                    print 'SSID: '+ssid
+                    print 'Password: '+pswd
+                    msg='Connecting to wifi network..'
+                    #subprocess.call(['sudo','/home/pi/Watchman/connectToWifi.py',ssid, pswd])
+                  else:
+                    msg='Please provide valid wifi credentials.\n'+correctFmt
+                else:
+                  msg = correctFmt
+                send_msg(msg)
+                pass
+
               else:
                 send_msg('Use the following commands:\n1.Start\n2.Stop\n3.Reboot\n4.Ussd|*144#\n5.Check_config\n6.Show_config_commands')
             else:
-              subprocess.call(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendMsg.py',str(sms),'1'])
+              subprocess.call(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendMsg.py',str(sms),'0'])
             pass
         elif params[0][0:5] == '+CUSD':
             try:
@@ -294,11 +504,14 @@ def check_incoming():
               print("Error: {}".format(e))
             pass
         elif params[0] == "NO CARRIER":
-
+            callingAdmin = False
             pass
-        elif params[0] == "RING" or params[0][0:5] == "+CLIP":
+        elif ('RING' in params[0]) or (params[0][0:5] == "+CLIP"):
             if not callingAdmin:
               result = command('ATA\r\n')
+              if ser.in_waiting:
+                result = ser.readline()
+              print 'Result '+result
               if 'OK' in result:
                 playMsgIfUserCalled()
                 command('ATH\r\n')
@@ -306,6 +519,7 @@ def check_incoming():
         elif params[0] == "MO CONNECTED":
             playMsgIfCallingUser()
             command('ATH\r\n')
+            callingAdmin = False
             global msgToAdmin
             msgToAdmin = ''
             pass
@@ -366,14 +580,21 @@ except Exception as e:
   print 'Failed to initialize mqtt listner..'
   exitScript(e)
 
+config = SafeConfigParser()
+config.read('/home/pi/Watchman/WatchmanConfig.ini')
+admin = ''
+reverseCallAdmin = ''
+try:
+  admin = config.get('ConfigVariables', 'admin_no')
+  reverseCallAdmin = config.get('ConfigVariables', 'callback_no')
+except:
+  print 'Admin No not found..'
 savbuf = ''
 _buffer = ''
 sendingSms = False
 exit = False
 callingAdmin = False
 REMOTE_SERVER = 'www.google.com'
-admin = '0723942375'
-reverseCallAdmin = '#0723942375'
 msgToAdmin = ''
 
 print 'checkSim800lEvents initialized..'

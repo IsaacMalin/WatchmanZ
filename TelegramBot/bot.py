@@ -12,11 +12,11 @@ import MySQLdb
 from ConfigParser import SafeConfigParser
 
 config = SafeConfigParser()
-config.read('/home/pi/Watchman/TelegramBot/TelegramBotConfig.ini')
+config.read('/home/pi/Watchman/WatchmanConfig.ini')
 
-authorizedUser = config.get('credentials', 'username')
-chat_id = config.get('credentials', 'chatid')
-token = config.get('credentials', 'token')
+authorizedUser = config.get('ConfigVariables', 'username')
+chat_id = config.get('ConfigVariables', 'chatid')
+token = config.get('ConfigVariables', 'token')
 
 now = datetime.datetime.now()
 
@@ -182,9 +182,9 @@ def action(msg):
     if username == authorizedUser:
 
         configS = SafeConfigParser()
-        configS.read('/home/pi/Watchman/TelegramBot/TelegramBotConfig.ini')
-        configS.set('credentials','chatid', str(chat_id))
-        with open('/home/pi/Watchman/TelegramBot/TelegramBotConfig.ini', 'w') as configfile:
+        configS.read('/home/pi/Watchman/WatchmanConfig.ini')
+        configS.set('ConfigVariables','chatid', str(chat_id))
+        with open('/home/pi/Watchman/WatchmanConfig.ini', 'w') as configfile:
           configS.write(configfile)
 
         command = msg['text']
@@ -1581,6 +1581,8 @@ def action(msg):
         else:
             answer = "Sorry "+username+", I can't understand what you're asking me, try typing '/Help'."
             telegram_bot.sendMessage (chat_id, str(answer))
+    else:
+        telegram_bot.sendMessage (chat_id, 'Hi, please set your username by sending the following SMS:\n\nSet_telegram_username|username\n\nwhere \'username\' is your firstname on Telegram')
 
 c = open("/home/pi/Watchman/TelegramBot/isBotRunning.txt","r")
 status = c.read()
@@ -1596,7 +1598,10 @@ token = token.strip()
 telegram_bot = telepot.Bot(token)
 print (telegram_bot.getMe())
 
-MessageLoop(telegram_bot, action).run_as_thread()
+try:
+  MessageLoop(telegram_bot, action).run_as_thread()
+except Exception as e:
+  print '['+datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S")+'] Error: {}'.format(e)
 ts = datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
 print '['+ts+'] Up and Running....'
 c = open("/home/pi/Watchman/TelegramBot/isBotRunning.txt","w+")

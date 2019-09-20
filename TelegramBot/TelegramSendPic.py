@@ -4,11 +4,11 @@ import sys
 from ConfigParser import SafeConfigParser
 
 config = SafeConfigParser()
-config.read('/home/pi/Watchman/TelegramBot/TelegramBotConfig.ini')
+config.read('/home/pi/Watchman/WatchmanConfig.ini')
 
-username = config.get('credentials', 'username')
-chat_id = config.get('credentials', 'chatid')
-token = config.get('credentials', 'token')
+username = config.get('ConfigVariables', 'username')
+chat_id = config.get('ConfigVariables', 'chatid')
+token = config.get('ConfigVariables', 'token')
 
 
 picPath = str(sys.argv[1])
