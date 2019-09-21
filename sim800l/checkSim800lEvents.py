@@ -7,6 +7,8 @@ import socket
 import telepot
 from datetime import datetime
 import paho.mqtt.client as mqtt
+import mysql.connector as mariadb
+import MySQLdb
 from ConfigParser import SafeConfigParser
 
 
@@ -315,15 +317,15 @@ def check_incoming():
             if admin[-9:] == sender.strip()[-9:]:
               splitSms = sms.split('|')
               global callingAdmin
-              if 'ssd|' in sms:
+              if 'ussd|' in sms.lower():
                 ussd = splitSms[1]
                 ussd = ussd.strip()
                 send_ussd(ussd)
                 pass
-              elif 'config_commands' in sms:
-                send_msg('Config Commands:\n1.Connect_wifi\n2.Set_admin_number\n3.Set_callback_number\n4.Set_telegram_username\n5.Set_telegram_token\n6.Set_sensorIP\n7.Set_gateway_static_IP')
+              elif 'show_config_commands' in sms.lower():
+                send_msg('Config Commands:\n1.Connect_wifi\n2.Set_admin_number\n3.Set_callback_number\n4.Set_telegram_username\n5.Set_telegram_token\n6.Set_static_IP\n7.Configure_sensor')
                 pass
-              elif 'et_admin_n' in sms:
+              elif 'set_admin_n' in sms.lower():
                 correctFmt = 'The correct format is:\n\nSet_admin_number|phoneNo'
                 adminNo = ''
                 msg = ''
@@ -343,7 +345,7 @@ def check_incoming():
                   msg = correctFmt
                 send_msg(msg)
                 pass
-              elif 'et_callback_n' in sms:
+              elif 'set_callback_n' in sms.lower():
                 correctFmt = 'The correct format is:\n\nSet_callback_number|phoneNo'
                 callbackNo = ''
                 msg = ''
@@ -363,7 +365,7 @@ def check_incoming():
                   msg = correctFmt
                 send_msg(msg)
                 pass
-              elif 'et_telegram_user' in sms:
+              elif 'set_telegram_user' in sms.lower():
                 correctFmt = 'The correct format is:\n\nSet_telegram_username|username'
                 username = ''
                 msg = ''
@@ -383,7 +385,7 @@ def check_incoming():
                   msg = correctFmt
                 send_msg(msg)
                 pass
-              elif 'et_telegram_token' in sms:
+              elif 'set_telegram_token' in sms.lower():
                 correctFmt = 'The correct format is:\n\nSet_telegram_token|token'
                 token = ''
                 msg = ''
@@ -418,8 +420,8 @@ def check_incoming():
                   msg = correctFmt
                 send_msg(msg)
                 pass
-              elif 'et_sensorIP' in sms:
-                correctFmt = 'The correct format is:\n\nSet_sensorIP|sensor-ip|gateway-ip'
+              elif 'configure_sensor' in sms.lower():
+                correctFmt = 'The correct format is:\n\nConfigure_sensor|sensor-ip|gateway-ip'
                 sensorip = ''
                 gatewayip = ''
                 msg = ''
@@ -445,28 +447,38 @@ def check_incoming():
                   msg = correctFmt
                 send_msg(msg)
                 pass
-              elif 'et_gateway_static_' in sms:
-                correctFmt = 'The correct format is:\n\nSet_gateway_static_IP|gatewayIP'
+              elif 'set_static_ip' in sms.lower():
+                correctFmt = 'The correct format is:\n\nSet_static_IP|gatewayIP|routerIP|dns\ne.g. \nSet_static_IP|192.168.1.10|192.168.1.1|8.8.8.8'
                 ip = ''
+                router = ''
+                dns = ''
                 msg = ''
                 error = 0
                 try:
                   splitsms = sms.split('|')
                   ip = str(splitsms[1].strip())
+                  router = str(splitsms[2].strip())
+                  dns = str(splitsms[3].strip())
                 except:
                   error = 1
                 if error == 0:
-                  if validate_ip(ip):
-                    print 'Gateway IP: '+ip
-                    #subprocess.call(['sudo','/home/pi/Watchman/setStaticIP.py',ip])
-                    msg='Gateway static IP has been updated.'
+                  if validate_ip(ip) and validate_ip(router) and (len(dns)>6):
+                    print 'Gateway IP: '+ip+' Router IP: '+router+' DNS: '+dns
+                    result = subprocess.check_output(['sudo','/home/pi/Watchman/setStaticIP.py',ip, router, dns])
+                    print result
+                    if 'done' in str(result):
+                      msg='Gateway static IP has been updated. Rebooting device..'
+                      send_msg(msg)
+                      subprocess.call(['sudo','reboot'])
+                    else:
+                      msg='Error occured please try again'
                   else:
-                    msg='Please provide a valid IP address.\n'+correctFmt
+                    msg='Please provide valid IP addresses.\n'+correctFmt
                 else:
                   msg = correctFmt
                 send_msg(msg)
                 pass
-              elif 'onnect_wifi' in sms:
+              elif 'connect_wifi' in sms.lower():
                 correctFmt = 'The correct format is:\n\nConnect_wifi|ssid|password'
                 ssid = ''
                 pswd = ''
@@ -482,15 +494,45 @@ def check_incoming():
                   if len(ssid) >= 1 and len(pswd) >= 1:
                     print 'SSID: '+ssid
                     print 'Password: '+pswd
-                    msg='Connecting to wifi network..'
-                    #subprocess.call(['sudo','/home/pi/Watchman/connectToWifi.py',ssid, pswd])
+                    msg = subprocess.check_output(['sudo','/home/pi/Watchman/connectToWifi.py',ssid, pswd])
                   else:
                     msg='Please provide valid wifi credentials.\n'+correctFmt
                 else:
                   msg = correctFmt
                 send_msg(msg)
                 pass
-
+              elif 'stop' in sms.lower():
+                response = updateWifiRegister(0,'*',0,'sendAlert')
+                state = response[0]
+                if state == '1':
+                  msg = 'Updates from all sensors have been disabled.\nSend \'Start\' to enable all sensor updates.'
+                elif state == 'A':
+                  msg = 'Updates from all sensors have already been disabled.\nSend \'Start\' to enable all sensor updates.'
+                elif state == '0':
+                  msg = 'There was an error, have you registered any sensors? please try again..'
+                else:
+                  msg = 'Operation failed, please try again..'
+                send_msg(msg)
+                pass
+              elif 'start' in sms.lower():
+                response = updateWifiRegister(0,'*',1,'sendAlert')
+                state = response[0]
+                if state == '1':
+                  msg = 'Updates from all sensors have been enabled.\nSend \'Stop\' to disable all sensors updates.'
+                elif state == 'A':
+                  msg = 'Updates from all sensors have already been enabled.\nSend \'Stop\' to disable all sensor updates.'
+                elif state == '0':
+                  msg = 'There was an error, have you registered any sensors? please try again..'
+                else:
+                  msg = 'Operation failed, please try again..'
+                send_msg(msg)
+                pass
+              elif 'reboot' in sms.lower():
+                send_msg('System will reboot after 1 minute..')
+                output = subprocess.Popen(["sudo", "shutdown", "-r"])
+              elif 'check_config' in sms.lower():
+                msg = subprocess.check_output(['sudo','/home/pi/Watchman/checkConfig.py'])
+                send_msg(msg)
               else:
                 send_msg('Use the following commands:\n1.Start\n2.Stop\n3.Reboot\n4.Ussd|*144#\n5.Check_config\n6.Show_config_commands')
             else:
@@ -530,6 +572,56 @@ def exitScript(e = 'Closing Script'):
   status = c.write('0')
   c.close()
   sys.exit()
+
+def updateWifiRegister(numOfValues,ip,value1,column1,value2=None,column2=None,value3=None,column3=None,value4=None,column4=None):
+  mariadb_connection = mariadb.connect(user=usr, password=pswd, database=db)
+  cursor1 = mariadb_connection.cursor()
+  try:
+    if numOfValues == 0:
+      cursor1.execute("SELECT * FROM registeredWifiSensors")
+    else:
+      cursor1.execute("SELECT * FROM registeredWifiSensors WHERE ip = '%s'"%(str(ip)))
+    result = cursor1.fetchall()
+    rowCount = len(result)
+    cursor1.close()
+    #print rowCount
+    if rowCount >= 1:
+      for row in result:
+        sensorName = row[1]
+        vidLength = row[8]
+        camType = row[5]
+        camIP = row[6]
+        cursor2 = mariadb_connection.cursor()
+        try:
+          if numOfValues == 1:
+            cursor2.execute("UPDATE registeredWifiSensors SET %s = '%s' WHERE IP = '%s'"%(str(column1),str(value1),str(ip)))
+          elif numOfValues == 2:
+            cursor2.execute("UPDATE registeredWifiSensors SET %s = '%s', %s = '%s' WHERE IP = '%s'"%(str(column1),str(value1),str(column2),str(value2),str(ip)))
+          elif numOfValues == 3:
+            cursor2.execute("UPDATE registeredWifiSensors SET %s = '%s', %s = '%s', %s = '%s' WHERE IP = '%s'"%(str(column1),str(value1),str(column2),str(value2),str(column3),str(value3),str(ip)))
+          elif numOfValues == 4:
+            cursor2.execute("UPDATE registeredWifiSensors SET %s = '%s', %s = '%s', %s = '%s', %s = '%s' WHERE IP = '%s'"%(str(column1),str(value1),str(column2),str(value2),str(column3),str(value3),str(column4),str(value4),str(ip)))
+          elif numOfValues == 0:
+            cursor2.execute("UPDATE registeredWifiSensors SET %s = '%s'"%(str(column1),str(value1)))
+          else:
+            return '0','0','0','0','0'
+          rowCount = cursor2.rowcount
+          cursor2.close()
+          mariadb_connection.commit()
+          #print rowCount
+          if rowCount >= 1:
+            return '1',sensorName,vidLength,camType,camIP
+          else:
+            return 'A',sensorName,vidLength,camType,camIP
+        except mariadb.Error as error:
+          print("Error: {}".format(error))
+          return '0','0','0','0','0'
+    else:
+      return '0','0','0','0','0'
+  except mariadb.Error as error:
+    print("Error: {}".format(error))
+    return '0','0','0','0','0'
+  mariadb_connection.close()
 
 #######################################################################################
 print("Starting checkSim800lEvents script..")
@@ -589,6 +681,13 @@ try:
   reverseCallAdmin = config.get('ConfigVariables', 'callback_no')
 except:
   print 'Admin No not found..'
+config2 = SafeConfigParser()
+config2.read('/home/pi/Watchman/sqldb/sqlCredentials.ini')
+
+usr = config2.get('credentials', 'username')
+pswd = config2.get('credentials', 'password')
+db = config2.get('credentials', 'database')
+
 savbuf = ''
 _buffer = ''
 sendingSms = False

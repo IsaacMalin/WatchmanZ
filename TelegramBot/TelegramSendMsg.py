@@ -6,11 +6,15 @@ import time
 from ConfigParser import SafeConfigParser
 
 config = SafeConfigParser()
-config.read('/home/pi/Watchman/WatchmanConfig.ini')
+try:
+  config.read('/home/pi/Watchman/WatchmanConfig.ini')
 
-username = config.get('ConfigVariables', 'username')
-chat_id = config.get('ConfigVariables', 'chatid')
-token = config.get('ConfigVariables', 'token')
+  username = config.get('ConfigVariables', 'username')
+  chat_id = config.get('ConfigVariables', 'chatid')
+  token = config.get('ConfigVariables', 'token')
+except:
+  print 'failed'
+  sys.exit()
 
 msg = str(sys.argv[1])
 sendSms = sys.argv[2]
