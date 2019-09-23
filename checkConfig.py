@@ -84,4 +84,4 @@ if  'C' in net:
 else:
   botStatus = 'Unknown'
 
-print '[WiFi]\nStatus:'+connectivity+' SSID:'+ssid+' IP:'+ip+' Internet:'+net+'\n[Telegram]\nUsername:'+username+' Token:'+token+' Bot:'+botStatus+'\n[GSM]\nAdmin:'+adminNo+'\nCallback:'+callbackNo
+print '[WiFi]\nStatus: '+connectivity+'\nSSID: '+ssid+'\nIP: '+ip+'\nInternet: '+net+'\n|[Telegram]\nUsername: '+username+'\nToken: '+token+'\nBot: '+botStatus+'\n|[GSM]\nAdmin: '+adminNo+'\nCallback: '+callbackNo

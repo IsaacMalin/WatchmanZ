@@ -13,8 +13,6 @@ from ConfigParser import SafeConfigParser
 
 config = SafeConfigParser()
 config.read('/home/pi/Watchman/WatchmanConfig.ini')
-
-authorizedUser = config.get('ConfigVariables', 'username')
 chat_id = config.get('ConfigVariables', 'chatid')
 token = config.get('ConfigVariables', 'token')
 
@@ -178,6 +176,8 @@ def validate_description(d):
 def action(msg):
     chat_id = msg['chat']['id']
     username = str(msg['chat']['first_name'])
+    config.read('/home/pi/Watchman/WatchmanConfig.ini')
+    authorizedUser = config.get('ConfigVariables', 'username')
 
     if username == authorizedUser:
 
@@ -205,7 +205,7 @@ def action(msg):
                 return
 
         if '/help' in commandL:
-            telegram_bot.sendMessage (chat_id, str("Use the following commands to configure your device:\n/Start\n/Stop\n/Show_NRF_sensor_commands\n/Show_IP_sensor_commands\n/Show_camera_commands\n/Temperature\n/Disk_Space\n/Reboot\n/Shutdown"))
+            telegram_bot.sendMessage (chat_id, str("Use the following commands to configure your device:\n/Start\n/Stop\n/Show_NRF_sensor_commands\n/Show_IP_sensor_commands\n/Show_camera_commands\n/Disable_gprs\n/Temperature\n/Disk_Space\n/Reboot\n/Shutdown"))
             pass
         elif '/show_nrf_sensor_commands' in commandL:
             telegram_bot.sendMessage (chat_id, str("NRF-Sensor Configuration Commands:\n\n/NRF_show_registered_sensors\n\n/NRF_show_configuration|SensorID\n\n/NRF_register_sensor|nodeID|localID|globalID|description\n\n/NRF_remove_sensor|SensorID\n\n/NRF_enable_message|SensorID\n\n/NRF_disable_message|SensorID\n\n/NRF_enable_media|SensorID\n\n/NRF_disable_media|SensorID\n\n/NRF_enable_sms|SensorID\n\n/NRF_disable_sms|SensorID\n\n/NRF_use_media|mediatype|SensorID\n\n/NRF_use_camera|cameratype|SensorID|ipaddress\n\n/NRF_set_videolength|seconds|SensorID"))
@@ -1515,6 +1515,21 @@ def action(msg):
             mariadb_connection.close()
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
+        elif commandL == '/disable_gprs':
+            try:
+              c = open("/home/pi/Watchman/useGprs.txt","r")
+              status = c.read()
+              status = status.strip()
+              c.close()
+              if status == '1':
+                msg = 'Stopping GPRS..'
+                subprocess.Popen(['sudo','/home/pi/Watchman/closeGprs.py'])
+              else:
+                msg = 'GPRS is not active.'
+            except:
+              msg = 'Error Stopping GPRS..'
+            telegram_bot.sendMessage(chat_id, str(msg))
+            subprocess.Popen(['sudo','/home/pi/Watchman/closeGprs.py'])
         elif commandL == '/stop':
             response = updateNRFRegister(0,'*',0,'sendAlert')
             response2 = updateWifiRegister(0,'*',0,'sendAlert')

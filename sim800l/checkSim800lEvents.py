@@ -44,7 +44,7 @@ def convert_to_string(buf):
         return bytes(tmp).decode('utf-8').strip()
 
         try:
-            ser=serial.Serial("/dev/ttyAMA0", baudrate=9600, timeout=2)
+            ser=serial.Serial("/dev/ttyAMA0", baudrate=115200, timeout=2)
         except Exception as e:
             exitScript(e)
 
@@ -532,9 +532,16 @@ def check_incoming():
                 output = subprocess.Popen(["sudo", "shutdown", "-r"])
               elif 'check_config' in sms.lower():
                 msg = subprocess.check_output(['sudo','/home/pi/Watchman/checkConfig.py'])
-                send_msg(msg)
+                msg1 = msg.split('|')[0]
+                msg2 = msg.split('|')[1]
+                msg3 = msg.split('|')[2]
+                send_msg(msg1)
+                send_msg(msg2)
+                send_msg(msg3)
+              elif 'use_gprs' in sms.lower():
+                subprocess.Popen(['sudo','/home/pi/Watchman/activateGprs.py'])
               else:
-                send_msg('Use the following commands:\n1.Start\n2.Stop\n3.Reboot\n4.Ussd|*144#\n5.Check_config\n6.Show_config_commands')
+                send_msg('Use the following commands:\n1.Start\n2.Stop\n3.Reboot\n4.Ussd|*144#\n5.Check_config\n6.Show_config_commands\n7.Use_gprs')
             else:
               subprocess.call(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendMsg.py',str(sms),'0'])
             pass
@@ -639,12 +646,32 @@ if status == '1':
   print'['+ts+'] checkSim800lEvents already running!!'
   sys.exit()
 
+#check if gprs is activated
+try:
+  c = open("/home/pi/Watchman/useGprs.txt","r")
+  status = c.read()
+  status = status.strip()
+  c.close()
+except Exception as e:
+  ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+  err = '['+ts+']'+': {}'.format(e)
+  print err
+  if 'No such file' in err:
+    c = open("/home/pi/Watchman/useGprs.txt","w")
+    status = c.write('0')
+    c.close()
+  sys.exit()
+if status == '1':
+  ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+  print'['+ts+'] gprs mode is active..'
+  sys.exit()
+
 c = open("/home/pi/Watchman/sim800l/checkSim800lEvents.txt","w")
 status = c.write('1')
 c.close()
 
 try:
-  ser=serial.Serial("/dev/ttyAMA0", baudrate=9600, timeout=2)
+  ser=serial.Serial("/dev/ttyAMA0", baudrate=115200, timeout=2)
 except Exception as e:
   exitScript(e)
 
