@@ -1,7 +1,20 @@
 #!/usr/bin/python
 import subprocess
 import sys
+import telepot
+from ConfigParser import SafeConfigParser
+from datetime import datetime
 
+ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+print '['+ts+']'
+
+config = SafeConfigParser()
+token = ''
+try:
+  config.read('/home/pi/Watchman/WatchmanConfig.ini')
+  token = config.get('ConfigVariables', 'token')
+except:
+  pass
 
 #check if gprs is activated
 try:
@@ -22,33 +35,25 @@ if not status == '1':
   sys.exit()
 
 
-def checkInternet(hostname):
-  print 'pinging '+hostname
+def checkBot():
   try:
-    result = subprocess.check_output(['sudo','ping','-c','2',hostname])
-    #print result
-    if 'bytes from '+hostname in result:
-      print 'net available'
+      bot = telepot.Bot(token)
+      data = bot.getMe()
       return True
-    else:
-      print 'net not available'
-      return False
   except Exception as e:
-     print 'error, net not available'
-     print 'Error: {}'.format(e)
-     return False
+      #print 'Error: {}'.format(e)
+      return False
 
-REMOTE_SERVER = '8.8.8.8'
 
-if not checkInternet(REMOTE_SERVER):
-  print 'No Internet, closing GPRS..'
+if not checkBot():
+  print 'Bot unavailable, closing GPRS..'
   subprocess.call(['sudo','poff','rnet'])
   #subprocess.call(['sudo','route','del','default'])
   subprocess.check_output(['sudo', 'wpa_cli', '-i', 'wlan0', 'reconfigure'])
   c = open("/home/pi/Watchman/useGprs.txt","w")
   status = c.write('0')
   c.close()
-  msg = 'There is no internet connection, GPRS has been deactivated, check airtime balance and reconnect GPRS. Send SMS \'Use_gprs\''
-  subprocess.call(['sudo','/home/pi/Watchman/sendSMS.py',str(msg)])
+  msg = 'There is no connection to Telegram, GPRS has been deactivated, check airtime balance and reconnect GPRS. Send SMS \'Use_gprs\''
+  subprocess.Popen(['sudo','/home/pi/Watchman/sendSMS.py',str(msg)])
 else:
-  print 'Internet available, leaving GPRS active..'
+  print 'Bot available, leaving GPRS active..'

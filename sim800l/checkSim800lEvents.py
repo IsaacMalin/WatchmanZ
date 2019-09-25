@@ -285,6 +285,238 @@ def playMsgIfUserCalled():
   c.write('0')
   c.close()
 
+def executeSmsCmd(sms):
+  splitSms = sms.split('|')
+  if 'ussd|' in sms.lower():
+    ussd = splitSms[1]
+    ussd = ussd.strip()
+    send_ussd(ussd)
+    pass
+  elif 'show_config_commands' in sms.lower():
+    send_msg('Config Commands:\n1.Connect_wifi\n2.Set_admin_number\n3.Set_callback_number\n4.Set_telegram_username\n5.Set_telegram_token\n6.Set_static_IP\n7.Configure_sensor')
+    pass
+  elif 'set_admin_n' in sms.lower():
+    correctFmt = 'The correct format is:\n\nSet_admin_number|phoneNo'
+    adminNo = ''
+    msg = ''
+    error = 0
+    try:
+      splitsms = sms.split('|')
+      adminNo = splitsms[1].strip()
+    except:
+      error = 1
+    if error == 0:
+      if validate_phoneNo(adminNo):
+        subprocess.call(['sudo','/home/pi/Watchman/saveWatchmanConfig.py','admin_no',str(adminNo)])
+        msg='Admin Number has been updated.'
+      else:
+        msg='Please type a valid phone number.\n'+correctFmt
+    else:
+      msg = correctFmt
+    send_msg(msg)
+    pass
+  elif 'set_callback_n' in sms.lower():
+    correctFmt = 'The correct format is:\n\nSet_callback_number|phoneNo'
+    callbackNo = ''
+    msg = ''
+    error = 0
+    try:
+      splitsms = sms.split('|')
+      callbackNo = splitsms[1].strip()
+    except:
+      error = 1
+    if error == 0:
+      if validate_phoneNo(callbackNo):
+        subprocess.call(['sudo','/home/pi/Watchman/saveWatchmanConfig.py','callback_no',str(callbackNo)])
+        msg='Callback Number has been updated.'
+      else:
+        msg='Please type a valid phone number.\n'+correctFmt
+    else:
+      msg = correctFmt
+    send_msg(msg)
+    pass
+  elif 'set_telegram_user' in sms.lower():
+    correctFmt = 'The correct format is:\n\nSet_telegram_username|username'
+    username = ''
+    msg = ''
+    error = 0
+    try:
+      splitsms = sms.split('|')
+      username = str(splitsms[1].strip())
+    except:
+      error = 1
+    if error == 0:
+      if len(username) >= 1:
+        subprocess.call(['sudo','/home/pi/Watchman/saveWatchmanConfig.py','username',username])
+        msg='Telegram recepient username has been updated.'
+      else:
+        msg='Please type a valid username.\n'+correctFmt
+    else:
+      msg = correctFmt
+    send_msg(msg)
+    pass
+  elif 'set_telegram_token' in sms.lower():
+    correctFmt = 'The correct format is:\n\nSet_telegram_token|token'
+    token = ''
+    msg = ''
+    error = 0
+    try:
+      splitsms = sms.split('|')
+      token = str(splitsms[1].strip())
+    except:
+      error = 1
+    if error == 0:
+      if validate_token(token):
+        if checkInternet(REMOTE_SERVER):
+          try:
+            bot = telepot.Bot(token)
+            data = bot.getMe()
+            print data
+            error = 0
+          except:
+            error = 1
+          if error == 0:
+            subprocess.call(['sudo','/home/pi/Watchman/saveWatchmanConfig.py','token',token])
+            subprocess.call(['sudo','/home/pi/Watchman/saveWatchmanConfig.py','chatid','1234'])
+            subprocess.call(['sudo','/home/pi/Watchman/saveWatchmanConfig.py','username','username'])
+            msg = 'Token loaded successfully!!'
+          else:
+            msg = 'Token was invalid, please confirm token and try again.'
+        else:
+          msg='Internet connection needed but is not available, check wifi setup.'
+      else:
+        msg='Please provide a valid token.\n'+correctFmt
+    else:
+      msg = correctFmt
+    send_msg(msg)
+    pass
+  elif 'configure_sensor' in sms.lower():
+    correctFmt = 'The correct format is:\n\nConfigure_sensor|wifi-ssid|password|sensor-ip|gateway-ip'
+    ssid = ''
+    pswd = ''
+    sensorip = ''
+    gatewayip = ''
+    msg = ''
+    error = 0
+    try:
+      splitsms = sms.split('|')
+      ssid = str(splitsms[1].strip())
+      pswd = str(splitsms[2].strip())
+      sensorip = str(splitsms[3].strip())
+      gatewayip = str(splitsms[4].strip())
+    except:
+      error = 1
+    if error == 0:
+      if validate_ip(sensorip) and validate_ip(gatewayip):
+        if sensorip != gatewayip:
+          print 'Sensor IP: '+sensorip
+          print 'Gateway IP: '+gatewayip
+          #subprocess.call(['sudo','/home/pi/Watchman/configureSensor.py', sensorip, gatewayip])
+          msg='Sensor has been configured successfully!'
+        else:
+          msg = 'Sensor IP and Gateway IP cannot be the same.\n'+correctFmt
+      else:
+        msg='Please provide valid IP addresses.\n'+correctFmt
+    else:
+      msg = correctFmt
+    send_msg(msg)
+    pass
+  elif 'set_static_ip' in sms.lower():
+    correctFmt = 'The correct format is:\n\nSet_static_IP|gatewayIP|routerIP|dns\ne.g. \nSet_static_IP|192.168.1.10|192.168.1.1|8.8.8.8'
+    ip = ''
+    router = ''
+    dns = ''
+    msg = ''
+    error = 0
+    try:
+      splitsms = sms.split('|')
+      ip = str(splitsms[1].strip())
+      router = str(splitsms[2].strip())
+      dns = str(splitsms[3].strip())
+    except:
+      error = 1
+    if error == 0:
+      if validate_ip(ip) and validate_ip(router) and (len(dns)>6):
+        print 'Gateway IP: '+ip+' Router IP: '+router+' DNS: '+dns
+        result = subprocess.check_output(['sudo','/home/pi/Watchman/setStaticIP.py',ip, router, dns])
+        print result
+        if 'done' in str(result):
+          msg='Gateway static IP has been updated. Rebooting device..'
+          send_msg(msg)
+          subprocess.call(['sudo','reboot'])
+        else:
+          msg='Error occured please try again'
+      else:
+        msg='Please provide valid IP addresses.\n'+correctFmt
+    else:
+      msg = correctFmt
+    send_msg(msg)
+    pass
+  elif 'connect_wifi' in sms.lower():
+    correctFmt = 'The correct format is:\n\nConnect_wifi|ssid|password'
+    ssid = ''
+    pswd = ''
+    msg = ''
+    error = 0
+    try:
+      splitsms = sms.split('|')
+      ssid = str(splitsms[1].strip())
+      pswd = str(splitsms[2].strip())
+    except:
+      error = 1
+    if error == 0:
+      if len(ssid) >= 1 and len(pswd) >= 1:
+        print 'SSID: '+ssid
+        print 'Password: '+pswd
+        msg = subprocess.check_output(['sudo','/home/pi/Watchman/connectToWifi.py',ssid, pswd])
+      else:
+        msg='Please provide valid wifi credentials.\n'+correctFmt
+    else:
+      msg = correctFmt
+    send_msg(msg)
+    pass
+  elif 'stop' in sms.lower():
+    response = updateWifiRegister(0,'*',0,'sendAlert')
+    state = response[0]
+    if state == '1':
+      msg = 'Updates from all sensors have been disabled.\nSend \'Start\' to enable all sensor updates.'
+    elif state == 'A':
+      msg = 'Updates from all sensors have already been disabled.\nSend \'Start\' to enable all sensor updates.'
+    elif state == '0':
+      msg = 'There was an error, have you registered any sensors? please try again..'
+    else:
+      msg = 'Operation failed, please try again..'
+    send_msg(msg)
+    pass
+  elif 'start' in sms.lower():
+    response = updateWifiRegister(0,'*',1,'sendAlert')
+    state = response[0]
+    if state == '1':
+      msg = 'Updates from all sensors have been enabled.\nSend \'Stop\' to disable all sensors updates.'
+    elif state == 'A':
+      msg = 'Updates from all sensors have already been enabled.\nSend \'Stop\' to disable all sensor updates.'
+    elif state == '0':
+      msg = 'There was an error, have you registered any sensors? please try again..'
+    else:
+      msg = 'Operation failed, please try again..'
+    send_msg(msg)
+    pass
+  elif 'reboot' in sms.lower():
+    send_msg('System will reboot after 1 minute..')
+    output = subprocess.Popen(["sudo", "shutdown", "-r"])
+  elif 'check_config' in sms.lower():
+    msg = subprocess.check_output(['sudo','/home/pi/Watchman/checkConfig.py'])
+    msg1 = msg.split('|')[0]
+    msg2 = msg.split('|')[1]
+    msg3 = msg.split('|')[2]
+    send_msg(msg1)
+    send_msg(msg2)
+    send_msg(msg3)
+  elif 'use_gprs' in sms.lower():
+    subprocess.Popen(['sudo','/home/pi/Watchman/activateGprs.py'])
+  else:
+    send_msg('Use the following commands:\n1.Start\n2.Stop\n3.Reboot\n4.Ussd|*144#\n5.Check_config\n6.Show_config_commands\n7.Use_gprs')
+
 def check_incoming():
     if ser.in_waiting:
         buf = ''
@@ -297,6 +529,7 @@ def check_incoming():
         params=buf.split(',')
         global savbuf
         savbuf = ''
+        global callingAdmin
         #print 'Params: '+params[0]
         if params[0][0:5] == "+CMTI":
             msgid = int(params[1])
@@ -304,9 +537,20 @@ def check_incoming():
             try:
               sender = smsdata[0]
               sms = smsdata[1]
-            except Exception as e:
-              print 'Error: {}'.format(e)
-              return
+            except:
+              count = 0
+              for count in range(5):
+                try:
+                  print str(count)+'. retrying to read sms no: '+str(params[1])
+                  msgid = int(params[1])
+                  smsdata = read_sms(msgid)
+                  sender = smsdata[0]
+                  sms = smsdata[1]
+                  if sms:
+                    break
+                except Exception as e:
+                  print 'SMS Error: {}'.format(e)
+                count += 1
             if msgid > 65:
               delete_all_sms()
             print sender
@@ -315,235 +559,9 @@ def check_incoming():
             if len(str(admin)) < 2:
               admin = sender
             if admin[-9:] == sender.strip()[-9:]:
-              splitSms = sms.split('|')
-              global callingAdmin
-              if 'ussd|' in sms.lower():
-                ussd = splitSms[1]
-                ussd = ussd.strip()
-                send_ussd(ussd)
-                pass
-              elif 'show_config_commands' in sms.lower():
-                send_msg('Config Commands:\n1.Connect_wifi\n2.Set_admin_number\n3.Set_callback_number\n4.Set_telegram_username\n5.Set_telegram_token\n6.Set_static_IP\n7.Configure_sensor')
-                pass
-              elif 'set_admin_n' in sms.lower():
-                correctFmt = 'The correct format is:\n\nSet_admin_number|phoneNo'
-                adminNo = ''
-                msg = ''
-                error = 0
-                try:
-                  splitsms = sms.split('|')
-                  adminNo = splitsms[1].strip()
-                except:
-                  error = 1
-                if error == 0:
-                  if validate_phoneNo(adminNo):
-                    subprocess.call(['sudo','/home/pi/Watchman/saveWatchmanConfig.py','admin_no',str(adminNo)])
-                    msg='Admin Number has been updated.'
-                  else:
-                    msg='Please type a valid phone number.\n'+correctFmt
-                else:
-                  msg = correctFmt
-                send_msg(msg)
-                pass
-              elif 'set_callback_n' in sms.lower():
-                correctFmt = 'The correct format is:\n\nSet_callback_number|phoneNo'
-                callbackNo = ''
-                msg = ''
-                error = 0
-                try:
-                  splitsms = sms.split('|')
-                  callbackNo = splitsms[1].strip()
-                except:
-                  error = 1
-                if error == 0:
-                  if validate_phoneNo(callbackNo):
-                    subprocess.call(['sudo','/home/pi/Watchman/saveWatchmanConfig.py','callback_no',str(callbackNo)])
-                    msg='Callback Number has been updated.'
-                  else:
-                    msg='Please type a valid phone number.\n'+correctFmt
-                else:
-                  msg = correctFmt
-                send_msg(msg)
-                pass
-              elif 'set_telegram_user' in sms.lower():
-                correctFmt = 'The correct format is:\n\nSet_telegram_username|username'
-                username = ''
-                msg = ''
-                error = 0
-                try:
-                  splitsms = sms.split('|')
-                  username = str(splitsms[1].strip())
-                except:
-                  error = 1
-                if error == 0:
-                  if len(username) >= 1:
-                    subprocess.call(['sudo','/home/pi/Watchman/saveWatchmanConfig.py','username',username])
-                    msg='Telegram recepient username has been updated.'
-                  else:
-                    msg='Please type a valid username.\n'+correctFmt
-                else:
-                  msg = correctFmt
-                send_msg(msg)
-                pass
-              elif 'set_telegram_token' in sms.lower():
-                correctFmt = 'The correct format is:\n\nSet_telegram_token|token'
-                token = ''
-                msg = ''
-                error = 0
-                try:
-                  splitsms = sms.split('|')
-                  token = str(splitsms[1].strip())
-                except:
-                  error = 1
-                if error == 0:
-                  if validate_token(token):
-                    if checkInternet(REMOTE_SERVER):
-                      try:
-                        bot = telepot.Bot(token)
-                        data = bot.getMe()
-                        print data
-                        error = 0
-                      except:
-                        error = 1
-                      if error == 0:
-                        subprocess.call(['sudo','/home/pi/Watchman/saveWatchmanConfig.py','token',token])
-                        subprocess.call(['sudo','/home/pi/Watchman/saveWatchmanConfig.py','chatid','1234'])
-                        subprocess.call(['sudo','/home/pi/Watchman/saveWatchmanConfig.py','username','username'])
-                        msg = 'Token loaded successfully!!'
-                      else:
-                        msg = 'Token was invalid, please confirm token and try again.'
-                    else:
-                      msg='Internet connection needed but is not available, check wifi setup.'
-                  else:
-                    msg='Please provide a valid token.\n'+correctFmt
-                else:
-                  msg = correctFmt
-                send_msg(msg)
-                pass
-              elif 'configure_sensor' in sms.lower():
-                correctFmt = 'The correct format is:\n\nConfigure_sensor|sensor-ip|gateway-ip'
-                sensorip = ''
-                gatewayip = ''
-                msg = ''
-                error = 0
-                try:
-                  splitsms = sms.split('|')
-                  sensorip = str(splitsms[1].strip())
-                  gatewayip = str(splitsms[2].strip())
-                except:
-                  error = 1
-                if error == 0:
-                  if validate_ip(sensorip) and validate_ip(gatewayip):
-                    if sensorip != gatewayip:
-                      print 'Sensor IP: '+sensorip
-                      print 'Gateway IP: '+gatewayip
-                      #subprocess.call(['sudo','/home/pi/Watchman/configureSensor.py', sensorip, gatewayip])
-                      msg='Sensor has been configured successfully!'
-                    else:
-                      msg = 'Sensor IP and Gateway IP cannot be the same.\n'+correctFmt
-                  else:
-                    msg='Please provide valid IP addresses.\n'+correctFmt
-                else:
-                  msg = correctFmt
-                send_msg(msg)
-                pass
-              elif 'set_static_ip' in sms.lower():
-                correctFmt = 'The correct format is:\n\nSet_static_IP|gatewayIP|routerIP|dns\ne.g. \nSet_static_IP|192.168.1.10|192.168.1.1|8.8.8.8'
-                ip = ''
-                router = ''
-                dns = ''
-                msg = ''
-                error = 0
-                try:
-                  splitsms = sms.split('|')
-                  ip = str(splitsms[1].strip())
-                  router = str(splitsms[2].strip())
-                  dns = str(splitsms[3].strip())
-                except:
-                  error = 1
-                if error == 0:
-                  if validate_ip(ip) and validate_ip(router) and (len(dns)>6):
-                    print 'Gateway IP: '+ip+' Router IP: '+router+' DNS: '+dns
-                    result = subprocess.check_output(['sudo','/home/pi/Watchman/setStaticIP.py',ip, router, dns])
-                    print result
-                    if 'done' in str(result):
-                      msg='Gateway static IP has been updated. Rebooting device..'
-                      send_msg(msg)
-                      subprocess.call(['sudo','reboot'])
-                    else:
-                      msg='Error occured please try again'
-                  else:
-                    msg='Please provide valid IP addresses.\n'+correctFmt
-                else:
-                  msg = correctFmt
-                send_msg(msg)
-                pass
-              elif 'connect_wifi' in sms.lower():
-                correctFmt = 'The correct format is:\n\nConnect_wifi|ssid|password'
-                ssid = ''
-                pswd = ''
-                msg = ''
-                error = 0
-                try:
-                  splitsms = sms.split('|')
-                  ssid = str(splitsms[1].strip())
-                  pswd = str(splitsms[2].strip())
-                except:
-                  error = 1
-                if error == 0:
-                  if len(ssid) >= 1 and len(pswd) >= 1:
-                    print 'SSID: '+ssid
-                    print 'Password: '+pswd
-                    msg = subprocess.check_output(['sudo','/home/pi/Watchman/connectToWifi.py',ssid, pswd])
-                  else:
-                    msg='Please provide valid wifi credentials.\n'+correctFmt
-                else:
-                  msg = correctFmt
-                send_msg(msg)
-                pass
-              elif 'stop' in sms.lower():
-                response = updateWifiRegister(0,'*',0,'sendAlert')
-                state = response[0]
-                if state == '1':
-                  msg = 'Updates from all sensors have been disabled.\nSend \'Start\' to enable all sensor updates.'
-                elif state == 'A':
-                  msg = 'Updates from all sensors have already been disabled.\nSend \'Start\' to enable all sensor updates.'
-                elif state == '0':
-                  msg = 'There was an error, have you registered any sensors? please try again..'
-                else:
-                  msg = 'Operation failed, please try again..'
-                send_msg(msg)
-                pass
-              elif 'start' in sms.lower():
-                response = updateWifiRegister(0,'*',1,'sendAlert')
-                state = response[0]
-                if state == '1':
-                  msg = 'Updates from all sensors have been enabled.\nSend \'Stop\' to disable all sensors updates.'
-                elif state == 'A':
-                  msg = 'Updates from all sensors have already been enabled.\nSend \'Stop\' to disable all sensor updates.'
-                elif state == '0':
-                  msg = 'There was an error, have you registered any sensors? please try again..'
-                else:
-                  msg = 'Operation failed, please try again..'
-                send_msg(msg)
-                pass
-              elif 'reboot' in sms.lower():
-                send_msg('System will reboot after 1 minute..')
-                output = subprocess.Popen(["sudo", "shutdown", "-r"])
-              elif 'check_config' in sms.lower():
-                msg = subprocess.check_output(['sudo','/home/pi/Watchman/checkConfig.py'])
-                msg1 = msg.split('|')[0]
-                msg2 = msg.split('|')[1]
-                msg3 = msg.split('|')[2]
-                send_msg(msg1)
-                send_msg(msg2)
-                send_msg(msg3)
-              elif 'use_gprs' in sms.lower():
-                subprocess.Popen(['sudo','/home/pi/Watchman/activateGprs.py'])
-              else:
-                send_msg('Use the following commands:\n1.Start\n2.Stop\n3.Reboot\n4.Ussd|*144#\n5.Check_config\n6.Show_config_commands\n7.Use_gprs')
+              executeSmsCmd(sms)
             else:
-              subprocess.call(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendMsg.py',str(sms),'0'])
+              subprocess.Popen(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendMsg.py',str(sms),'1'])
             pass
         elif params[0][0:5] == '+CUSD':
             try:
@@ -572,6 +590,11 @@ def check_incoming():
             global msgToAdmin
             msgToAdmin = ''
             pass
+        elif "+CMT:" in params[0]:
+            print 'Memory full, deleting all messages..'
+            if "memory is full" in buf:
+              delete_all_sms()
+              print 'done'
 def exitScript(e = 'Closing Script'):
   ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
   print '['+ts+']'+': {}'.format(e)
@@ -631,6 +654,8 @@ def updateWifiRegister(numOfValues,ip,value1,column1,value2=None,column2=None,va
   mariadb_connection.close()
 
 #######################################################################################
+ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+print '['+ts+']'
 print("Starting checkSim800lEvents script..")
 #check if script is already running
 try:
@@ -725,6 +750,19 @@ msgToAdmin = ''
 
 print 'checkSim800lEvents initialized..'
 setup()
+#check if we have unread msgs
+print 'Checking latest unread message..'
+result = command('AT+CMGL="REC UNREAD"\n',5,3000)
+if result:
+  try:
+    unread = savbuf.split('+CMGL:')
+    sms = unread[-1].split('\n')[1]
+    print 'latest txt: ['+sms+']'
+    executeSmsCmd(sms)
+  except:
+    print 'Error, no unread sms'
+else:
+  print 'No unread sms'
 try:
   while True:
     if exit:

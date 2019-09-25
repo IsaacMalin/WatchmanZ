@@ -2,6 +2,10 @@
 import os
 import time
 import sys
+from datetime import datetime
+
+ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+print '['+ts+']'
 
 path = ['/home/pi/Pictures/IpCam','/home/pi/Pictures/PiCam','/home/pi/Pictures/USB1Cam','/home/pi/Videos/IpCam','/home/pi/Videos/PiCam','/home/pi/Videos/USB1Cam']
 
@@ -17,3 +21,7 @@ for p in path:
 
       if os.path.isfile(f):
         os.remove(f)
+
+print 'Deleting files larger than 1M in logs..'
+
+os.system('sudo find /home/pi/Watchman/logs/*.log -type f -size +3k -delete')

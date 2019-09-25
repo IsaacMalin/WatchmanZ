@@ -23,6 +23,8 @@ def on_message(client, userdata, message):
       subprocess.Popen(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendMsg.py',msg,'0'])
       pass
 ########################################
+ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+print '['+ts+']'
 print("Starting mqtt sub engine..")
 #check if script is already running
 c = open("/home/pi/Watchman/mqtt/mqttSub.txt","r")

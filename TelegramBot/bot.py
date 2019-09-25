@@ -205,7 +205,7 @@ def action(msg):
                 return
 
         if '/help' in commandL:
-            telegram_bot.sendMessage (chat_id, str("Use the following commands to configure your device:\n/Start\n/Stop\n/Show_NRF_sensor_commands\n/Show_IP_sensor_commands\n/Show_camera_commands\n/Disable_gprs\n/Temperature\n/Disk_Space\n/Reboot\n/Shutdown"))
+            telegram_bot.sendMessage (chat_id, str("Use the following commands to configure your device:\n/Start\n/Stop\n/Show_NRF_sensor_commands\n/Show_IP_sensor_commands\n/Show_camera_commands\n/Disable_gprs\n/Check_config\n/Temperature\n/Disk_Space\n/Reboot\n/Shutdown"))
             pass
         elif '/show_nrf_sensor_commands' in commandL:
             telegram_bot.sendMessage (chat_id, str("NRF-Sensor Configuration Commands:\n\n/NRF_show_registered_sensors\n\n/NRF_show_configuration|SensorID\n\n/NRF_register_sensor|nodeID|localID|globalID|description\n\n/NRF_remove_sensor|SensorID\n\n/NRF_enable_message|SensorID\n\n/NRF_disable_message|SensorID\n\n/NRF_enable_media|SensorID\n\n/NRF_disable_media|SensorID\n\n/NRF_enable_sms|SensorID\n\n/NRF_disable_sms|SensorID\n\n/NRF_use_media|mediatype|SensorID\n\n/NRF_use_camera|cameratype|SensorID|ipaddress\n\n/NRF_set_videolength|seconds|SensorID"))
@@ -219,6 +219,10 @@ def action(msg):
         elif commandL == '/time':
             telegram_bot.sendMessage(chat_id, str(now.hour)+str(":")+str(now.minute))
             pass
+        elif commandL == '/check_config':
+            msg = subprocess.check_output(['sudo','/home/pi/Watchman/checkConfig.py'])
+            msg = msg.replace('|','')
+            telegram_bot.sendMessage (chat_id, msg)
         elif '/nrf_disable_message' in commandL:
             try:
               localID = commandS[1]
@@ -948,7 +952,7 @@ def action(msg):
                       fileExists = os.path.exists('/home/pi/Watchman/Images/ipcamimg.jpg')
                       if fileExists == True:
                         telegram_bot.sendMessage(chat_id, str("Photo captured! trying to send it.."))
-                        telegram_bot.sendPhoto (chat_id, photo=open('/home/pi/Watchman/Images/ipcamimg.jpg'))
+                        subprocess.Popen(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendPic.py','/home/pi/Watchman/Images/ipcamimg.jpg'])
                       else:
                         telegram_bot.sendMessage(chat_id, str("Photo capture from IP camera - "+str(ipAddr)+" unsuccessful, please ensure IP camera is functioning and retry."))
                     else:
@@ -962,7 +966,7 @@ def action(msg):
                   fileExists = os.path.exists('/home/pi/Watchman/Images/usb1camimg.jpg')
                   if fileExists == True:
                     telegram_bot.sendMessage(chat_id, str("Photo captured! trying to send it.."))
-                    telegram_bot.sendPhoto (chat_id, photo=open('/home/pi/Watchman/Images/usb1camimg.jpg'))
+                    subprocess.Popen(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendPic.py','/home/pi/Watchman/Images/usb1camimg.jpg'])
                   else:
                     telegram_bot.sendMessage(chat_id, str("Photo capture from USB camera unsuccessful, please make sure camera is available and retry.."))
                 elif camType.lower() == 'picam':
@@ -972,7 +976,7 @@ def action(msg):
                   fileExists = os.path.exists('/home/pi/Watchman/Images/picamimg.jpg')
                   if fileExists == True:
                     telegram_bot.sendMessage(chat_id, str("Photo captured! trying to send it.."))
-                    telegram_bot.sendPhoto (chat_id, photo=open('/home/pi/Watchman/Images/picamimg.jpg'))
+                    subprocess.Popen(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendPic.py','/home/pi/Watchman/Images/picamimg.jpg'])
                   else:
                     telegram_bot.sendMessage(chat_id, str("Photo capture from Raspberry Pi camera unsuccessful, please ensure pi camera is installed properly and retry."))
                 else:
@@ -1529,7 +1533,6 @@ def action(msg):
             except:
               msg = 'Error Stopping GPRS..'
             telegram_bot.sendMessage(chat_id, str(msg))
-            subprocess.Popen(['sudo','/home/pi/Watchman/closeGprs.py'])
         elif commandL == '/stop':
             response = updateNRFRegister(0,'*',0,'sendAlert')
             response2 = updateWifiRegister(0,'*',0,'sendAlert')

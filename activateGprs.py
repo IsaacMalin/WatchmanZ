@@ -82,7 +82,7 @@ if error == 0:
   print result
   if 'failed' in result:
     error = 1
-    msg = 'Failed to send a message to you via Telegram.'
+    msg = 'Failed to send a message to you via Telegram, check airtime balance and try again.'
 
 
 c = open("/home/pi/Watchman/sim800l/checkSim800lEvents.txt","w")

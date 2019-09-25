@@ -6,6 +6,8 @@ import time
 from datetime import datetime
 from ConfigParser import SafeConfigParser
 
+ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+print '['+ts+'] Checking Active MQTT Devices..'
 config = SafeConfigParser()
 config.read('/home/pi/Watchman/sqldb/sqlCredentials.ini')
 

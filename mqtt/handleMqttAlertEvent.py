@@ -106,4 +106,4 @@ if sendAlert == 1:
         pass
       #send video to telegram user
       print 'Sending video to Telegram..'
-      output = subprocess.call(["sudo", "/home/pi/Watchman/TelegramBot/TelegramSendVid.py", vpath])
+      output = subprocess.Popen(["sudo", "/home/pi/Watchman/TelegramBot/TelegramSendVid.py", vpath])

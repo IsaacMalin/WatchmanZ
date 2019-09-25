@@ -3,6 +3,7 @@
 import RPi.GPIO as GPIO
 import time
 import subprocess
+from datetime import datetime
 
 resetPin = 18
 
@@ -14,6 +15,8 @@ GPIO.output(resetPin, GPIO.LOW)
 time.sleep(1/100)
 GPIO.output(resetPin, GPIO.HIGH)
 
+ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+print '['+ts+']'
 print "Sim800l has been reset!"
 
 GPIO.cleanup()

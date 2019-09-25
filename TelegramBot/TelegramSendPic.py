@@ -31,7 +31,7 @@ except Exception as e:
 
 if status == '1':
   print 'GPRS connection detected, compressing image..'
-  subprocess.call(['sudo','convert',picPath,'-resize','160','pic-sm.jpg'])
+  subprocess.call(['sudo','convert',picPath,'-resize','100','pic-sm.jpg'])
   picPath = 'pic-sm.jpg'
 
 bot = telepot.Bot(token)

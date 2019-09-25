@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import subprocess
 import sys
+import time
 
 #check if gprs is activated
 try:
@@ -30,3 +31,5 @@ c.close()
 
 msg = 'GPRS has been deactivated, to reconnect, Send SMS \'Use_gprs\''
 subprocess.call(['sudo','/home/pi/Watchman/sendSMS.py',str(msg)])
+time.sleep(10)
+subprocess.call(['sudo','/home/pi/Watchman/mqtt/mqttPub.py','closeCheckSimEvents','1'])
