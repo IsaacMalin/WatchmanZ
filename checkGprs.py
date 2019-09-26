@@ -2,6 +2,7 @@
 import subprocess
 import sys
 import telepot
+import time
 from ConfigParser import SafeConfigParser
 from datetime import datetime
 
@@ -34,6 +35,27 @@ if not status == '1':
   print'gprs mode is inactive..'
   sys.exit()
 
+def checkInternet(hostname):
+  print 'pinging '+hostname
+  try:
+    result = subprocess.check_output(['sudo','ping','-c','2',hostname])
+    #print result
+    if 'bytes from '+hostname in result:
+      print 'net available'
+      return True
+    else:
+      print 'net not available'
+      return False
+  except Exception as e:
+     print 'error, net not available'
+     print 'Error: {}'.format(e)
+     return False
+REMOTE_SERVER = '8.8.8.8'
+
+if not checkInternet(REMOTE_SERVER):
+  print 'No internet, restarting ppp connection'
+  subprocess.call(['sudo','pon','rnet'])
+  time.sleep(10)
 
 def checkBot():
   try:
@@ -53,6 +75,7 @@ if not checkBot():
   c = open("/home/pi/Watchman/useGprs.txt","w")
   status = c.write('0')
   c.close()
+  subprocess.call(['sudo','/home/pi/Watchman/sim800l/resetSim800l.py'])
   msg = 'There is no connection to Telegram, GPRS has been deactivated, check airtime balance and reconnect GPRS. Send SMS \'Use_gprs\''
   subprocess.Popen(['sudo','/home/pi/Watchman/sendSMS.py',str(msg)])
 else:

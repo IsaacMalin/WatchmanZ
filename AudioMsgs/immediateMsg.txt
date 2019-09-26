@@ -1,3 +1,2 @@
-+CMGS: 157
-On-net SMS : 0 SMS, Expiry: 25-09-2019 18:55
-Weekly SMS Bundle : 27 SMS, Expiry: 26-09-2019 00:00
+On-net SMS : 0 SMS, Expiry: 26-09-2019 19:09
+Weekly SMS Bundle : 347 SMS, Expiry: 03-10-2019 00:00

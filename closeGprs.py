@@ -25,10 +25,11 @@ print 'Closing gprs connection'
 subprocess.call(['sudo','poff','rnet'])
 #subprocess.call(['sudo','route','del','default'])
 subprocess.check_output(['sudo', 'wpa_cli', '-i', 'wlan0', 'reconfigure'])
+subprocess.call(['sudo',])
 c = open("/home/pi/Watchman/useGprs.txt","w")
 status = c.write('0')
 c.close()
-
+subprocess.call(['sudo','/home/pi/Watchman/sim800l/resetSim800l.py'])
 msg = 'GPRS has been deactivated, to reconnect, Send SMS \'Use_gprs\''
 subprocess.call(['sudo','/home/pi/Watchman/sendSMS.py',str(msg)])
 time.sleep(10)

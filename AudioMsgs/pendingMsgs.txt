@@ -1,14 +1,11 @@
-0On-net SMS : 0 SMS, Expiry: 25-09-2019 18:55
-Weekly SMS Bundle : 45 SMS, Expiry: 26-09-2019 00:00
-, On-net SMS : 0 SMS, Expiry: 25-09-2019 18:55
-Weekly SMS Bundle : 41 SMS, Expiry: 26-09-2019 00:00
-, On-net SMS : 0 SMS, Expiry: 25-09-2019 18:55
-Weekly SMS Bundle : 37 SMS, Expiry: 26-09-2019 00:00
-, Daily Internet Bundle : 4MB, Expiry: 25-09-2019 18:55
-On-net SMS : 0 SMS, Expiry: 25-09-2019 18:55
-, Daily Internet Bundle : 4MB, Expiry: 25-09-2019 18:55
-On-net SMS : 0 SMS, Expiry: 25-09-2019 18:55
-, +CMGS: 157
-On-net SMS : 0 SMS, Expiry: 25-09-2019 18:55
-Weekly SMS Bundle : 27 SMS, Expiry: 26-09-2019 00:00
+0On-net SMS : 0 SMS, Expiry: 26-09-2019 19:09
+Weekly SMS Bundle : 364 SMS, Expiry: 03-10-2019 00:00
+, Mteja mpendwa noti za kitambo za Ksh 1000 hazitatumika baada ya tarehe 30/09/2019.Tafadhali peleka noti hizo kwa M-PESA Agent aliye karibu upesi kuzuia h
+, asara.
+, Daily Internet Bundle : 5MB, Expiry: 26-09-2019 19:09, On-net SMS : 0 SMS, Expiry: 26-09-2019 19:09, On-net SMS : 0 SMS, Expiry: 26-09-2019 19:09, On-net SMS : 0 SMS, Expiry: 26-09-2019 19:09
+Weekly SMS Bundle : 355 SMS, Expiry: 03-10-2019 00:00
+, Daily Internet Bundle : 5MB, Expiry: 26-09-2019 19:09
+On-net SMS : 0 SMS, Expiry: 26-09-2019 19:09
+, On-net SMS : 0 SMS, Expiry: 26-09-2019 19:09
+Weekly SMS Bundle : 347 SMS, Expiry: 03-10-2019 00:00
 , 

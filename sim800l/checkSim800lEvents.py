@@ -91,22 +91,22 @@ def send_sms(destno,msgtext):
       ser.write('AT+CMGS="{}"\n'.format(destno))
       time.sleep(2)
       ser.write(msgtext.encode()+'\x1A\r\n')
-      count = 0
       buf = ''
-      while len(_buffer) < 4 and len(buf) < 4:
-        count += 1
-        if count > 9:
-          break
+      for x in range(20):
+        if x > 18:
+          return 'timeout'
         buf = ser.readline()
-        print str(count)+'. Waiting for response..'+str(len(_buffer))+' '+str(len(buf))
+        if '+CMTI:' in buf:
+          _buffer = buf
+        print str(x)+'. Waiting for response.. '+str(_buffer)+' '+str(buf)
         time.sleep(1)
-      if ('+CMGS' or '+CUSD' in _buffer) or ('+CMGS' or '+CUSD' in buf):
-        sendingSms = False
-        return 'OK'
-      else:
-        print 'SMS not sent!'
-        sendingSms = False
-        return 'error'
+        if (('ERROR' in _buffer) or ('ERROR' in buf)):
+          sendingSms = False
+          return 'error'
+        if '+CMGS:' in _buffer or '+CUSD:' in _buffer or '+CMGS:' in buf or '+CUSD:' in buf:
+          sendingSms = False
+          return 'OK'
+      return 'Error'
       #result = command('AT+CMGS="{}"\n'.format(destno),99,5000,msgtext+'\x1A')
     else:
       subprocess.call(['sudo','/home/pi/Watchman/sim800l/resetSim800l.py'])
@@ -114,9 +114,12 @@ def send_sms(destno,msgtext):
       return 'No Response'
 
 def send_msg(msg):
+    global admin
+    global _buffer
     print 'Sending SMS..'
-    if len(str(admin)) > 2:
+    if admin:
       result = send_sms(admin,msg)
+      print 'send sms result: '+str(result)
       if not 'OK' in result:
         print 'failed, calling admin..'
         global msgToAdmin
@@ -129,6 +132,9 @@ def send_msg(msg):
           subprocess.call(['sudo','/home/pi/Watchman/sim800l/resetSim800l.py'])
       else:
         print 'SMS sent!'
+        if '+CMTI:' in _buffer:
+          act_on_incoming(_buffer)
+          _buffer = ''
 
 def send_ussd(ussd):
   result = command('AT+CUSD=1,\"'+str(ussd)+'\",15\r')
@@ -138,16 +144,22 @@ def send_ussd(ussd):
     return False
 
 def read_sms(id):
+    global savbuf
     result = command('AT+CMGR={}\n'.format(id),99)
     if result:
+        print 'Reading sms from memory result: '+result
         params=result.split(',')
         if not params[0] == '':
             params2 = params[0].split(':')
             if params2[0]=='+CMGR':
-                number = params[1].replace('"',' ').strip()
-                date   = params[3].replace('"',' ').strip()
-                time   = params[4].replace('"',' ').strip()
-                #return  [number,date,time,savbuf]
+                try:
+                  number = params[1].replace('"',' ').strip()
+                  date   = params[3].replace('"',' ').strip()
+                  time   = params[4].replace('"',' ').strip()
+                  #return  [number,date,time,savbuf]
+                except:
+                  return None
+                print 'savbuf buffer: '+savbuf
                 return [number,savbuf]
     return None
 
@@ -522,8 +534,13 @@ def check_incoming():
         buf = ''
         while ser.in_waiting:
           buf+=ser.readline()
-        print(buf)
+        act_on_incoming(buf)
+
+def act_on_incoming(buf):
+    if buf:
+        print('Got incoming from sim800l: '+str(buf))
         global _buffer
+        global admin
         buf = convert_to_string(buf)
         _buffer = buf
         params=buf.split(',')
@@ -532,36 +549,42 @@ def check_incoming():
         global callingAdmin
         #print 'Params: '+params[0]
         if params[0][0:5] == "+CMTI":
-            msgid = int(params[1])
-            smsdata = read_sms(msgid)
-            try:
-              sender = smsdata[0]
-              sms = smsdata[1]
-            except:
-              count = 0
-              for count in range(5):
-                try:
-                  print str(count)+'. retrying to read sms no: '+str(params[1])
-                  msgid = int(params[1])
-                  smsdata = read_sms(msgid)
-                  sender = smsdata[0]
-                  sms = smsdata[1]
-                  if sms:
-                    break
-                except Exception as e:
-                  print 'SMS Error: {}'.format(e)
-                count += 1
-            if msgid > 65:
-              delete_all_sms()
-            print sender
-            print sms
-            global admin
-            if len(str(admin)) < 2:
-              admin = sender
-            if admin[-9:] == sender.strip()[-9:]:
-              executeSmsCmd(sms)
-            else:
-              subprocess.Popen(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendMsg.py',str(sms),'1'])
+            if params[1] != None:
+              msgid = int(params[1])
+              smsdata = read_sms(msgid)
+              sender = ''
+              sms = ''
+              try:
+                sender = smsdata[0]
+                sms = smsdata[1]
+              except:
+                count = 0
+                for count in range(10):
+                  if count > 8:
+                    exitScript('fatal error refreshing script!!')
+                  try:
+                    print str(count)+'. retrying to read sms no: '+str(params[1])
+                    msgid = int(params[1])
+                    smsdata = read_sms(msgid)
+                    sender = smsdata[0]
+                    sms = smsdata[1]
+                    if len(sms) > 2:
+                      break
+                  except Exception as e:
+                    print 'SMS Error: {}'.format(e)
+                  count += 1
+              if msgid > 65:
+                delete_all_sms()
+              #print sender
+              #print sms
+              if len(str(admin)) < 2:
+                admin = sender
+              if admin[-9:] == sender.strip()[-9:]:
+                executeSmsCmd(sms)
+              else:
+                if sms:
+                  print 'Trying to send msg: '+str(sms)+' via Telegram..'
+                  subprocess.Popen(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendMsg.py',str(sms),'1'])
             pass
         elif params[0][0:5] == '+CUSD':
             try:
@@ -578,7 +601,7 @@ def check_incoming():
               result = command('ATA\r\n')
               if ser.in_waiting:
                 result = ser.readline()
-              print 'Result '+result
+              #print 'Result '+result
               if 'OK' in result:
                 playMsgIfUserCalled()
                 command('ATH\r\n')
@@ -752,22 +775,42 @@ print 'checkSim800lEvents initialized..'
 setup()
 #check if we have unread msgs
 print 'Checking latest unread message..'
-result = command('AT+CMGL="REC UNREAD"\n',5,3000)
+checkError = 0
+no = ''
+sms = ''
+result = command('AT+CMGL="REC UNREAD"\n',65,5000)
+#print '/savbuf {'+savbuf+'} /savbuf'
 if result:
   try:
+    savbuf = result+'\n'+savbuf
     unread = savbuf.split('+CMGL:')
+    #print '/unread {'
+    #print '\n'.join(unread)
+    #print '} /unread'
+    #print '['+unread[-1]+']'
     sms = unread[-1].split('\n')[1]
-    print 'latest txt: ['+sms+']'
-    executeSmsCmd(sms)
-  except:
-    print 'Error, no unread sms'
+    try:
+      no = unread[-1].split('"')[3]
+    except:
+      checkError = 1
+    print 'latest txt: ['+sms+'] from: '+str(no)
+    if checkError == 0:
+      if admin[-9:] == no.strip()[-9:]:
+        print 'Executing cmd from admin..'
+        executeSmsCmd(sms)
+      else:
+        if sms:
+          print 'Trying to send msg: '+str(sms)+' via Telegram..'
+          subprocess.Popen(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendMsg.py',str(sms),'1'])
+  except Exception as e:
+    print 'Error, {}'.format(e)
 else:
   print 'No unread sms'
-try:
-  while True:
-    if exit:
-      exitScript('Closing checkSim800lEvents.py script!!')
-    check_incoming()
-    time.sleep(1)
-except Exception as e:
-  exitScript(e)
+#try:
+while True:
+  if exit:
+    exitScript('Closing checkSim800lEvents.py script!!')
+  check_incoming()
+  time.sleep(1)
+#except Exception as e:
+#  exitScript(e)
