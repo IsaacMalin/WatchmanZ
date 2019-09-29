@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import subprocess
+import sys
 import os
 import time, datetime
 import telepot
@@ -10,6 +11,9 @@ import socket
 import mysql.connector as mariadb
 import MySQLdb
 from ConfigParser import SafeConfigParser
+
+#limit traceback
+sys.tracebacklimit=0
 
 config = SafeConfigParser()
 config.read('/home/pi/Watchman/WatchmanConfig.ini')
@@ -174,6 +178,7 @@ def validate_description(d):
     return True
 
 def action(msg):
+  try:
     chat_id = msg['chat']['id']
     username = str(msg['chat']['first_name'])
     config.read('/home/pi/Watchman/WatchmanConfig.ini')
@@ -1527,6 +1532,8 @@ def action(msg):
               c.close()
               if status == '1':
                 msg = 'Stopping GPRS..'
+                #logfile = open("/home/pi/Watchman/logs/checkSim800lEvents.log", 'a+')
+                #subprocess.Popen(['sudo','/home/pi/Watchman/closeGprs.py'],stderr=subprocess.STDOUT, stdout=logfile)
                 subprocess.Popen(['sudo','/home/pi/Watchman/closeGprs.py'])
               else:
                 msg = 'GPRS is not active.'
@@ -1601,6 +1608,8 @@ def action(msg):
             telegram_bot.sendMessage (chat_id, str(answer))
     else:
         telegram_bot.sendMessage (chat_id, 'Hi, please set your username by sending the following SMS:\n\nSet_telegram_username|username\n\nwhere \'username\' is your firstname on Telegram')
+  except Exception as e:
+    print 'Action error: {}'.format(e)
 
 c = open("/home/pi/Watchman/TelegramBot/isBotRunning.txt","r")
 status = c.read()
@@ -1613,13 +1622,17 @@ if status == '1':
 
 token = token.strip()
 
-telegram_bot = telepot.Bot(token)
-print (telegram_bot.getMe())
+try:
+  telegram_bot = telepot.Bot(token)
+  print (telegram_bot.getMe())
+except Exception as e:
+  print 'Failed to get to Telegram servers: '.format(e)
+  sys.exit()
 
 try:
   MessageLoop(telegram_bot, action).run_as_thread()
 except Exception as e:
-  print '['+datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S")+'] Error: {}'.format(e)
+  print '['+datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S")+'] MessageLoop Error: {}'.format(e)
 ts = datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
 print '['+ts+'] Up and Running....'
 c = open("/home/pi/Watchman/TelegramBot/isBotRunning.txt","w+")
@@ -1628,7 +1641,7 @@ c.close()
 
 try:
     while 1:
-        time.sleep(10)
+        time.sleep(3)
 except:
     ts = datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
     print '['+ts+'] Bot is about to die..'

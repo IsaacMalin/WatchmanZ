@@ -31,6 +31,3 @@ try:
   c.close()
 except Exception as e:
   pass
-
-if status == '1':
-  subprocess.call(['sudo','/home/pi/Watchman/activateGprs.py'])

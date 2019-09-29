@@ -22,6 +22,6 @@ for p in path:
       if os.path.isfile(f):
         os.remove(f)
 
-print 'Deleting files larger than 1M in logs..'
+print 'Deleting files larger than 5M in logs..'
 
-os.system('sudo find /home/pi/Watchman/logs/*.log -type f -size +3k -delete')
+os.system('sudo find /home/pi/Watchman/logs/*.log -type f -size +5M -delete')

@@ -25,6 +25,13 @@ def on_message(client, userdata, message):
       global exit
       exit = True
     elif topic == 'sendSMS':
+      global sendingSms
+      print 'Another sms is currently being sent: '+str(sendingSms)
+      count = 0
+      while sendingSms and count<20:
+        print 'Another sms is being sent, waiting..'
+        count += 1
+        time.sleep(1)
       send_msg(msg)
     elif topic == 'callNumber':
       global callingAdmin
@@ -94,6 +101,7 @@ def send_sms(destno,msgtext):
       buf = ''
       for x in range(20):
         if x > 18:
+          sendingSms = False
           return 'timeout'
         buf = ser.readline()
         if '+CMTI:' in buf:
@@ -121,6 +129,12 @@ def send_msg(msg):
       result = send_sms(admin,msg)
       print 'send sms result: '+str(result)
       if not 'OK' in result:
+        c = open("/home/pi/Watchman/AudioMsgs/immediateMsg.txt","w+")
+        c.write(msg)
+        c.close()
+        p = open("/home/pi/Watchman/AudioMsgs/pendingMsgs.txt","a+")
+        p.write(msg+', ')
+        p.close()
         print 'failed, calling admin..'
         global msgToAdmin
         msgToAdmin = "Sending text message failed. Airtime balance may be depleted. Try loading more airtime."
@@ -174,7 +188,11 @@ def alive(n):
         subprocess.call(['sudo','/home/pi/Watchman/sim800l/resetSim800l.py'])
         time.sleep(5)
       print str(x)+' checking sim800l..'
-      result = command('AT\n')
+      try:
+        result = command('AT\n')
+      except Exception as e:
+        subprocess.call(['sudo','/home/pi/Watchman/sim800l/resetSim800l.py'])
+        exitScript(e)
       if result != None:
         if 'OK' in result:
           return True
@@ -538,7 +556,7 @@ def check_incoming():
 
 def act_on_incoming(buf):
     if buf:
-        print('Got incoming from sim800l: '+str(buf))
+        print('Got incoming from sim800l: ['+str(buf))+']'
         global _buffer
         global admin
         buf = convert_to_string(buf)
@@ -676,6 +694,59 @@ def updateWifiRegister(numOfValues,ip,value1,column1,value2=None,column2=None,va
     return '0','0','0','0','0'
   mariadb_connection.close()
 
+def checkUnreadMsgs():
+    print 'Checking latest unread message..'
+    global checkingUnread
+    checkingUnread = True
+    global savbuf
+    global sendingSms
+    print 'check if sms is being sent....: '+str(sendingSms)
+    try:
+      count = 0
+      while sendingSms and count<10:
+        count += 1
+        print str(count)+'. Another sms is being sent, chillin..'
+        time.sleep(2)
+
+      checkError = 0
+      no = ''
+      sms = ''
+
+      result = command('AT+CMGL="REC UNREAD"\n',65,5000)
+      #print '/savbuf {'+savbuf+'} /savbuf'
+      if result:
+        try:
+          savbuf = result+'\n'+savbuf
+          unread = savbuf.split('+CMGL:')
+          #print '/unread {'
+          #print '\n'.join(unread)
+          #print '} /unread'
+          #print '['+unread[-1]+']'
+          sms = unread[-1].split('\n')[1]
+          try:
+            no = unread[-1].split('"')[3]
+            print 'latest txt: ['+sms+'] from: '+str(no)
+          except:
+            checkError = 1
+          if checkError == 0:
+            if admin[-9:] == no.strip()[-9:]:
+              print 'Executing sms cmd from admin..'
+              executeSmsCmd(sms)
+            else:
+              if sms:
+                print 'Trying to send msg: '+str(sms)+' via Telegram..'
+                subprocess.Popen(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendMsg.py',str(sms),'1'])
+          else:
+            print 'No unread sms found!'
+        except Exception as e:
+          print 'Error, {}'.format(e)
+      else:
+        print 'No unread sms'
+    except Exception as e:
+      print 'Error: {}'.format(e)
+      checkingUnread = False
+    checkingUnread = False
+
 #######################################################################################
 ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
 print '['+ts+']'
@@ -774,43 +845,15 @@ msgToAdmin = ''
 print 'checkSim800lEvents initialized..'
 setup()
 #check if we have unread msgs
-print 'Checking latest unread message..'
-checkError = 0
-no = ''
-sms = ''
-result = command('AT+CMGL="REC UNREAD"\n',65,5000)
-#print '/savbuf {'+savbuf+'} /savbuf'
-if result:
-  try:
-    savbuf = result+'\n'+savbuf
-    unread = savbuf.split('+CMGL:')
-    #print '/unread {'
-    #print '\n'.join(unread)
-    #print '} /unread'
-    #print '['+unread[-1]+']'
-    sms = unread[-1].split('\n')[1]
-    try:
-      no = unread[-1].split('"')[3]
-    except:
-      checkError = 1
-    print 'latest txt: ['+sms+'] from: '+str(no)
-    if checkError == 0:
-      if admin[-9:] == no.strip()[-9:]:
-        print 'Executing cmd from admin..'
-        executeSmsCmd(sms)
-      else:
-        if sms:
-          print 'Trying to send msg: '+str(sms)+' via Telegram..'
-          subprocess.Popen(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendMsg.py',str(sms),'1'])
-  except Exception as e:
-    print 'Error, {}'.format(e)
-else:
-  print 'No unread sms'
-#try:
-while True:
-  if exit:
-    exitScript('Closing checkSim800lEvents.py script!!')
-  check_incoming()
-  time.sleep(1)
-#except Exception as e:
-#  exitScript(e)
+time.sleep(15)
+checkingUnread = False
+checkUnreadMsgs()
+
+try:
+  while True:
+    if exit:
+      exitScript('Closing checkSim800lEvents.py script!!')
+    check_incoming()
+    time.sleep(1)
+except Exception as e:
+  exitScript(e)

@@ -28,11 +28,4 @@ except Exception as e:
   print 'failed to send via Telegram'
   if sendSms == '1':
     print 'Trying to send via SMS..'
-    c = open("/home/pi/Watchman/AudioMsgs/immediateMsg.txt","w+")
-    c.write(msg)
-    c.close()
-    p = open("/home/pi/Watchman/AudioMsgs/pendingMsgs.txt","a+")
-    p.write(msg+', ')
-    p.close()
-
     output = subprocess.Popen(["sudo", "/home/pi/Watchman/sendSMS.py", msg+"\n(Telegram Not Available, Check WiFi!)"])
