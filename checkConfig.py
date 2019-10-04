@@ -13,6 +13,7 @@ token = ''
 botStatus = ''
 adminNo = ''
 callbackNo = ''
+gpsStatus = ''
 
 config = SafeConfigParser()
 try:
@@ -42,6 +43,19 @@ try:
   callbackNo = config.get('ConfigVariables', 'callback_no')
 except:
   callbackNo = 'Not_set'
+try:
+  c = open("/home/pi/Watchman/useGprs.txt","r")
+  status = c.read()
+  status = status.strip()
+  c.close()
+  if status == '1':
+    gprsStatus = 'Active'
+  elif status == '0':
+    gprsStatus = 'Disabled'
+  else:
+    gprsStatus = 'Unknown'
+except:
+  gprsStatus  = 'Not_set'
 
 def checkInternet(hostname):
   try:
@@ -84,4 +98,4 @@ if  'C' in net:
 else:
   botStatus = 'Unknown'
 
-print '[WiFi]\nStatus: '+connectivity+'\nSSID: '+ssid+'\nIP: '+ip+'\nInternet: '+net+'\n|[Telegram]\nUsername: '+username+'\nToken: '+token+'\nBot: '+botStatus+'\n|[GSM]\nAdmin: '+adminNo+'\nCallback: '+callbackNo
+print '[WiFi]\nStatus: '+connectivity+'\nSSID: '+ssid+'\nIP: '+ip+'\nInternet: '+net+'\n|[Telegram]\nUsername: '+username+'\nToken: '+token+'\nBot: '+botStatus+'\n|[GSM]\nAdmin: '+adminNo+'\nCallback: '+callbackNo+'\nGPRS: '+gprsStatus

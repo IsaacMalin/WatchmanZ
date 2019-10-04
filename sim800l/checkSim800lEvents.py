@@ -61,13 +61,20 @@ def setup():
   command('AT+CMGF=1\n')    # plain text SMS
   command('AT+CLTS=1\n')    # enable get local timestamp mode
   command('AT+CSCLK=0\n')   # disable automatic sleep
+  command('AT+CREG=1\n',lines=3)    # enable to show network status
 
 def command(cmdstr, lines=1, waitfor=500, msgtext=None):
     while ser.in_waiting:
         ser.readline()
-    ser.write(cmdstr.encode())
+    try:
+      ser.write(cmdstr.encode())
+    except Exception as e:
+      print 'Encode cmdstr error: {}'.format(e)
     if msgtext:
-        ser.write(msgtext.encode())
+        try:
+          ser.write(msgtext.encode())
+        except Exception as e:
+          print 'Encode msgtext error: {}'.format(e)
     if waitfor>1000:
         time.sleep((waitfor-1000)/1000)
     buf=ser.readline() #discard linefeed etc
@@ -97,7 +104,10 @@ def send_sms(destno,msgtext):
       _buffer = ''
       ser.write('AT+CMGS="{}"\n'.format(destno))
       time.sleep(2)
-      ser.write(msgtext.encode()+'\x1A\r\n')
+      try:
+        ser.write(msgtext.encode()+'\x1A\r\n')
+      except Exception as e:
+        print 'Encode send_sms msgtext error: {}'.format(e)
       buf = ''
       for x in range(20):
         if x > 18:
@@ -106,7 +116,7 @@ def send_sms(destno,msgtext):
         buf = ser.readline()
         if '+CMTI:' in buf:
           _buffer = buf
-        print str(x)+'. Waiting for response.. '+str(_buffer)+' '+str(buf)
+        print str(x)+'. Waiting for response _buffer: '+str(_buffer)+' buf: '+str(buf)
         time.sleep(1)
         if (('ERROR' in _buffer) or ('ERROR' in buf)):
           sendingSms = False
@@ -117,9 +127,14 @@ def send_sms(destno,msgtext):
       return 'Error'
       #result = command('AT+CMGS="{}"\n'.format(destno),99,5000,msgtext+'\x1A')
     else:
-      subprocess.call(['sudo','/home/pi/Watchman/sim800l/resetSim800l.py'])
+      resetSim800l()
       sendingSms = False
       return 'No Response'
+
+def resetSim800l():
+  subprocess.call(['sudo','/home/pi/Watchman/sim800l/resetSim800l.py'])
+  time.sleep(5)
+  setup()
 
 def send_msg(msg):
     global admin
@@ -133,7 +148,7 @@ def send_msg(msg):
         c.write(msg)
         c.close()
         p = open("/home/pi/Watchman/AudioMsgs/pendingMsgs.txt","a+")
-        p.write(msg+', ')
+        p.write(msg+'~ ')
         p.close()
         print 'failed, calling admin..'
         global msgToAdmin
@@ -143,12 +158,13 @@ def send_msg(msg):
             call_number(reverseCallAdmin)
         else:
           print 'No GSM Module found!!'
-          subprocess.call(['sudo','/home/pi/Watchman/sim800l/resetSim800l.py'])
+          resetSim800l()
       else:
         print 'SMS sent!'
-        if '+CMTI:' in _buffer:
-          act_on_incoming(_buffer)
-          _buffer = ''
+        command('AT\n',lines = 3)
+      if '+CMTI:' in _buffer:
+        act_on_incoming(_buffer)
+        _buffer = ''
 
 def send_ussd(ussd):
   result = command('AT+CUSD=1,\"'+str(ussd)+'\",15\r')
@@ -159,6 +175,7 @@ def send_ussd(ussd):
 
 def read_sms(id):
     global savbuf
+    command('AT+CMGF=1\n',lines = 3)
     result = command('AT+CMGR={}\n'.format(id),99)
     if result:
         print 'Reading sms from memory result: '+result
@@ -185,8 +202,7 @@ def call_number(num):
 def alive(n):
     for x in range(1,n+1):
       if x == 5:
-        subprocess.call(['sudo','/home/pi/Watchman/sim800l/resetSim800l.py'])
-        time.sleep(5)
+        resetSim800l()
       print str(x)+' checking sim800l..'
       try:
         result = command('AT\n')
@@ -216,6 +232,22 @@ def checkInternet(hostname):
   except:
      pass
   return False
+
+def pingServer(hostname):
+  print 'pinging '+hostname
+  try:
+    result = subprocess.check_output(['sudo','ping','-c','2',hostname])
+    #print result
+    if 'bytes from '+hostname in result:
+      print 'net available'
+      return True
+    else:
+      print 'net not available'
+      return False
+  except Exception as e:
+     print 'error, net not available'
+     print 'Error: {}'.format(e)
+     return False
 
 def validate_ip(s):
     a = s.split('.')
@@ -275,12 +307,13 @@ def playMsgIfCallingUser():
 #method to play audio message if admin calls us
 def playMsgIfUserCalled():
   print 'Admin called us, now playing status and pending messages'
+  sendPendingMsgs()
   #check if we have pending messages..
   c = open("/home/pi/Watchman/AudioMsgs/pendingMsgs.txt","r")
   msg = c.read()
   pendingMsg = 'You have no pending messages, '
   if len(msg) > 2:
-    pendingMsg = 'You have some pending messages. '+msg
+    pendingMsg = 'You have some pending messages, I will send them to you now, '
   c.close()
 
   #check the battery status and if we are running on mains power or battery power
@@ -310,10 +343,10 @@ def playMsgIfUserCalled():
   subprocess.call(['sudo','pico2wave','-w','/home/pi/Watchman/AudioMsgs/secondCalledMsg.wav',pendingMsg+battMsg+netMsg+lastMsg])
   subprocess.call(['sudo','aplay','/home/pi/Watchman/AudioMsgs/secondCalledMsg.wav'])
 
-  #Clear text file once the message has been played to user
-  c = open("/home/pi/Watchman/AudioMsgs/pendingMsgs.txt","w")
-  c.write('0')
-  c.close()
+  #Clear text file once the message has been played to user (pending msgs will be cleared once they are sent via telegram)
+  #c = open("/home/pi/Watchman/AudioMsgs/pendingMsgs.txt","w")
+  #c.write('0')
+  #c.close()
 
 def executeSmsCmd(sms):
   splitSms = sms.split('|')
@@ -548,11 +581,23 @@ def executeSmsCmd(sms):
     send_msg('Use the following commands:\n1.Start\n2.Stop\n3.Reboot\n4.Ussd|*144#\n5.Check_config\n6.Show_config_commands\n7.Use_gprs')
 
 def check_incoming():
+    global checkingIncoming
+    checkingIncoming = True
     if ser.in_waiting:
         buf = ''
         while ser.in_waiting:
           buf+=ser.readline()
-        act_on_incoming(buf)
+        if len(str(buf))>1:
+          act_on_incoming(buf)
+        else:
+          print 'got ['+str(buf)+'] from sim800l, checking if alive..'
+          if alive(4):
+            setup()
+    checkingIncoming = False
+
+
+def sendPendingMsgs():
+  subprocess.Popen(['sudo','/home/pi/Watchman/AudioMsgs/sendPendingMsgs.py'])
 
 def act_on_incoming(buf):
     if buf:
@@ -576,12 +621,14 @@ def act_on_incoming(buf):
                 sender = smsdata[0]
                 sms = smsdata[1]
               except:
-                count = 0
                 for count in range(10):
                   if count > 8:
                     exitScript('fatal error refreshing script!!')
                   try:
                     print str(count)+'. retrying to read sms no: '+str(params[1])
+                    if count == 4:
+                      resetSim800l()
+                      time.sleep(5)
                     msgid = int(params[1])
                     smsdata = read_sms(msgid)
                     sender = smsdata[0]
@@ -603,6 +650,7 @@ def act_on_incoming(buf):
                 if sms:
                   print 'Trying to send msg: '+str(sms)+' via Telegram..'
                   subprocess.Popen(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendMsg.py',str(sms),'1'])
+                  sendPendingMsgs()
             pass
         elif params[0][0:5] == '+CUSD':
             try:
@@ -636,6 +684,7 @@ def act_on_incoming(buf):
             if "memory is full" in buf:
               delete_all_sms()
               print 'done'
+
 def exitScript(e = 'Closing Script'):
   ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
   print '['+ts+']'+': {}'.format(e)
@@ -747,6 +796,32 @@ def checkUnreadMsgs():
       checkingUnread = False
     checkingUnread = False
 
+def checkNetStatus():
+  result = command('AT+CREG?\n',lines = 3)
+  print 'Checking network status..'
+  try:
+    state = result.split(',')[1]
+    state = state.split('\n')[0]
+    state = state.strip()
+    print 'status: {}'.format(state)
+    if state == '0':
+      return 'GSM: Not Registered'
+    elif state == '1':
+      return 'GSM: Registered'
+    elif state == '2':
+      return 'GSM: Searching'
+    elif state == '3':
+      return 'GSM: Denied'
+    elif state == '4':
+      return 'GSM: Unknown'
+    elif state == '5':
+      return 'GSM: Roaming'
+    else:
+      return 'GSM: Error'
+  except Exception as e:
+    print 'Error checking net status: {}'.format(e)
+    return 'GSM: Error'
+
 #######################################################################################
 ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
 print '['+ts+']'
@@ -837,6 +912,7 @@ db = config2.get('credentials', 'database')
 savbuf = ''
 _buffer = ''
 sendingSms = False
+checkingIncoming = False
 exit = False
 callingAdmin = False
 REMOTE_SERVER = 'www.google.com'
@@ -848,11 +924,28 @@ setup()
 time.sleep(15)
 checkingUnread = False
 checkUnreadMsgs()
+subprocess.call(['sudo','poff','rnet'])
 
 try:
+  count = 0
   while True:
+    count += 1
     if exit:
       exitScript('Closing checkSim800lEvents.py script!!')
+    if count > 300:
+      print 'checking if sim800l is alive..'
+      while sendingSms and checkingIncoming and count < 320:
+        print str(count)+'Waiting for sendingSms: '+sendingSms+' and checkIncoming:  '+checkingIncoming
+        count += 1
+        time.sleep(1)
+      if not alive(10):
+        exitScript('No response from GSM Module, killing script..')
+      netStatus = checkNetStatus()
+      print netStatus
+      if 'Error' in netStatus:
+        print 'Error checking network status..'
+        resetSim800l()
+      count = 0
     check_incoming()
     time.sleep(1)
 except Exception as e:

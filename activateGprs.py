@@ -103,8 +103,8 @@ if error == 0:
 else:
   print 'Closing gprs connection'
   subprocess.call(['sudo','poff','rnet'])
-  time.sleep(5)
-  subprocess.call(['sudo','/home/pi/Watchman/sim800l/resetSim800l.py'])
+  #time.sleep(5)
+  #subprocess.call(['sudo','/home/pi/Watchman/sim800l/resetSim800l.py'])
   #subprocess.call(['sudo','route','del','default'])
   subprocess.check_output(['sudo', 'wpa_cli', '-i', 'wlan0', 'reconfigure'])
   c = open("/home/pi/Watchman/useGprs.txt","w")

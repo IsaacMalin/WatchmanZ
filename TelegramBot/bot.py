@@ -907,7 +907,7 @@ def action(msg):
                           fileExists = os.path.exists('/home/pi/Watchman/Videos/ipcamvid.mp4')
                           if fileExists == True:
                             telegram_bot.sendMessage(chat_id, str("Captured "+str(seconds)+" Sec video from IP camera - "+str(ipAddr)+", trying to send video.."))
-                            telegram_bot.sendVideo (chat_id, video=open('/home/pi/Watchman/Videos/ipcamvid.mp4'))
+                            subprocess.Popen(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendVid.py','/home/pi/Watchman/Videos/ipcamvid.mp4'])
                           else:
                             telegram_bot.sendMessage(chat_id, str("Video capture from IP camera - "+str(ipAddr)+" unsuccessful, please ensure ip camera is functioning and retry."))
                         else:
@@ -921,7 +921,7 @@ def action(msg):
                       fileExists = os.path.exists('/home/pi/Watchman/Videos/usb1camvid.avi')
                       if fileExists == True:
                         telegram_bot.sendMessage(chat_id, str("Captured "+str(seconds)+" Sec video from USB camera, trying to send video.."))
-                        telegram_bot.sendVideo (chat_id, video=open('/home/pi/Watchman/Videos/usb1camvid.avi'))
+                        subprocess.Popen(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendVid.py','/home/pi/Watchman/Videos/usb1camvid.avi'])
                       else:
                         telegram_bot.sendMessage(chat_id, str("Video capture from USB camera unsuccessful, please make sure camera is available and retry.."))
                     elif camType.lower() == 'picam':
@@ -931,7 +931,7 @@ def action(msg):
                       fileExists = os.path.exists('/home/pi/Watchman/Videos/picamvid.mp4')
                       if fileExists == True:
                         telegram_bot.sendMessage(chat_id, str("Captured "+str(seconds)+" Sec video from Raspberry Pi camera, trying to send video.."))
-                        telegram_bot.sendVideo (chat_id, video=open('/home/pi/Watchman/Videos/picamvid.mp4'))
+                        subprocess.Popen(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendVid.py','/home/pi/Watchman/Videos/picamvid.mp4'])
                       else:
                         telegram_bot.sendMessage(chat_id, str("Video capture from Raspberry Pi camera unsuccessful, please ensure pi camera is installed properly and retry."))
                     else:
