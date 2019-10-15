@@ -23,6 +23,14 @@ c = open("/home/pi/Watchman/ssd1306/pushToDisplay.txt","w+")
 status = c.write('0')
 c.close()
 
+c = open("/home/pi/Watchman/wifiDisconnected.txt","w+")
+status = c.write('0')
+c.close()
+
+c = open("/home/pi/Watchman/wifiConnected.txt","w+")
+status = c.write('0')
+c.close()
+
 subprocess.call(['/home/pi/Watchman/ssd1306/display.py','Booting..','1'])
 subprocess.call(['/home/pi/Watchman/ssd1306/display.py','Searching..','4'])
 ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
@@ -30,5 +38,10 @@ print 'Initialized sensor and bot variables on '+ts
 time.sleep(60)
 subprocess.call(['sudo','wpa_cli','-i','wlan0','-a','/home/pi/Watchman/onWifiConnect.sh','-B'])
 ssid = subprocess.check_output(['sudo','/home/pi/Watchman/wifiSSID.py'])
+ip = subprocess.check_output(['hostname', '-I'])
+ip = ip.replace('\n','').replace('\r','')
+ip = ip.split('.')
+shortip = ' [.'+ip[2]+'.'+ip[3]+']'
+ssid = ssid.replace('\n','').replace('\r','')
 if ssid:
-  subprocess.call(['/home/pi/Watchman/ssd1306/display.py',str(ssid),'4'])
+  subprocess.call(['/home/pi/Watchman/ssd1306/display.py',str(ssid)+str(shortip),'4'])

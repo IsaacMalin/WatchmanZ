@@ -47,10 +47,11 @@ try:
   client.connect(broker_address) #connect to broker
   client.loop_start() #start the loop
   #subscribe to interesting topics..
-  print("Subscribing to topic","sensorStatus","sensorAlert","sensorUpdates")
+  print("Subscribing to topic","sensorStatus","sensorAlert","sensorUpdates","powerStatus")
   client.subscribe("sensorStatus")
   client.subscribe("sensorAlert")
   client.subscribe("sensorUpdates")
+  client.subscribe("powerStatus")
 
   c = open("/home/pi/Watchman/mqtt/mqttSub.txt","w+")
   status = c.write('1')

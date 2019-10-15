@@ -46,11 +46,13 @@ except mariadb.Error as error:
   exit()
 
 mariadb_connection.close()
+ms = datetime.now().strftime("%H:%M:%S")
+sensorMsg = sensorName+' ['+ip+'] reports '+alertMsg+' at '+ms
+subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py',str(ms)+' New alert from:','2'])
+subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py',str(sensorName),'3'])
 
 if sendAlert == 1:
   ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-  ms = datetime.now().strftime("%H:%M:%S")
-  sensorMsg = sensorName+' ['+ip+'] reports '+alertMsg+' at '+ms
   ipath = ' '
   vpath = ' '
   #send message to telegram user

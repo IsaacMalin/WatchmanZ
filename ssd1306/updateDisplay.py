@@ -32,3 +32,6 @@ except:
 
 if level:
   subprocess.call(['sudo','/home/pi/Watchman/ssd1306/display.py',str(level)+' '+str(status),'5'])
+
+subprocess.call(['sudo','/home/pi/Watchman/ssd1306/display.py','No New Sensor Message','2'])
+subprocess.call(['sudo','/home/pi/Watchman/ssd1306/display.py',' ','3'])

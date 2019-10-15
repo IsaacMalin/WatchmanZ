@@ -75,6 +75,9 @@ def exitScript(e = 'Closing Script'):
   c = open("/home/pi/Watchman/ssd1306/pushToDisplay.txt","w+")
   status = c.write('0')
   c.close()
+  # Clear display.
+  oled.fill(0)
+  oled.show()
   sys.exit()
 
 #######################################################################################

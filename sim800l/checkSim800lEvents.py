@@ -315,6 +315,7 @@ def playMsgIfCallingUser():
   c = open("/home/pi/Watchman/AudioMsgs/immediateMsg.txt","w")
   c.write('0')
   c.close()
+  sendPendingMsgs()
 
 #method to play audio message if admin calls us
 def playMsgIfUserCalled():
