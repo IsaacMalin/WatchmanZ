@@ -18,9 +18,9 @@ def on_message(client, userdata, message):
     qos = message.qos
     retainFlag = message.retain
     print("message received " ,msg)
-    print("message topic=",topic)
-    print("message qos=",qos)
-    print("message retain flag=",retainFlag)
+    #print("message topic=",topic)
+    #print("message qos=",qos)
+    #print("message retain flag=",retainFlag)
     if topic == 'closeCheckSimEvents':
       global exit
       exit = True
@@ -141,9 +141,11 @@ def send_msg(msg):
     global _buffer
     print 'Sending SMS..'
     if admin:
+      subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py','Sending SMS..','1'])
       result = send_sms(admin,msg)
       print 'send sms result: '+str(result)
       if not 'OK' in result:
+        subprocess.call(['/home/pi/Watchman/ssd1306/display.py','Send SMS Failed','1'])
         c = open("/home/pi/Watchman/AudioMsgs/immediateMsg.txt","w+")
         c.write(msg)
         c.close()
@@ -161,6 +163,7 @@ def send_msg(msg):
           resetSim800l()
       else:
         print 'SMS sent!'
+        subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py','GSM Ready','1'])
         command('AT\n',lines = 3)
       if '+CMTI:' in _buffer:
         act_on_incoming(_buffer)
@@ -195,7 +198,9 @@ def read_sms(id):
     return None
 
 def call_number(num):
-    print 'Calling: '+num
+    msg = 'Call:'+num
+    print msg
+    subprocess.call(['/home/pi/Watchman/ssd1306/display.py',str(msg),'1'])
     command('AT+MORING=1\r\n')
     command('ATD'+num+';\r\n')
 
@@ -282,53 +287,75 @@ def validate_token(tn):
 
 #method to play audio messages to admin if we call the admin
 def playMsgIfCallingUser():
-  global msgToAdmin
   print 'Admin has been called, now playing pending message'
-  if len(msgToAdmin) > 5:
-    subprocess.call(['sudo','pico2wave','-w','/home/pi/Watchman/AudioMsgs/msgToAdmin.wav',msgToAdmin])
-    subprocess.call(['sudo','aplay','/home/pi/Watchman/AudioMsgs/msgToAdmin.wav'])
-    msgToAdmin = ''
-  else:
+  try:
+    c = open("/home/pi/Watchman/AudioMsgs/firstCallingMsg.wav","r")
+    c.close()
+  except:
+    subprocess.call(['sudo','pico2wave','-w','/home/pi/Watchman/AudioMsgs/firstCallingMsg.wav','Sending text messages to you failed. Please check airtime balance.'])
+  immediateMsg = 'You have no pending messages, '
+  try:
     c = open("/home/pi/Watchman/AudioMsgs/immediateMsg.txt","r")
     msg = c.read()
-    immediateMsg = 'You have no new message, '
+    c.close()
     if len(msg) > 2:
-      immediateMsg = 'You have a message, '+msg+', '
+      if 'reports' in msg:
+        immediateMsg = 'You have a new message, '+msg+', '
+      else:
+        immediateMsg = 'You have some pending messages, '
+  except:
+    c = open("/home/pi/Watchman/AudioMsgs/immediateMsg.txt","w+")
+    c.write(' ')
     c.close()
-    lastMsg = 'Thank you for your time and have a nice day.'
-    subprocess.Popen(['sudo','pico2wave','-w','/home/pi/Watchman/AudioMsgs/secondCallingMsg.wav',immediateMsg+lastMsg])
-    subprocess.call(['sudo','aplay','/home/pi/Watchman/AudioMsgs/firstCallingMsg.wav'])
-    subprocess.call(['sudo','aplay','/home/pi/Watchman/AudioMsgs/secondCallingMsg.wav'])
-    #Clear text file once the message has been played to user
-    c = open("/home/pi/Watchman/AudioMsgs/immediateMsg.txt","w")
-    c.write('0')
-    c.close()
+  lastMsg = 'Thank you for your time and have a nice day.'
+  subprocess.Popen(['sudo','pico2wave','-w','/home/pi/Watchman/AudioMsgs/secondCallingMsg.wav',immediateMsg+lastMsg])
+  subprocess.call(['sudo','aplay','/home/pi/Watchman/AudioMsgs/firstCallingMsg.wav'])
+  subprocess.call(['sudo','aplay','/home/pi/Watchman/AudioMsgs/secondCallingMsg.wav'])
+  #Clear text file once the message has been played to user
+  c = open("/home/pi/Watchman/AudioMsgs/immediateMsg.txt","w")
+  c.write('0')
+  c.close()
 
 #method to play audio message if admin calls us
 def playMsgIfUserCalled():
+  try:
+    c = open("/home/pi/Watchman/AudioMsgs/firstCalledMsg.wav","r")
+    c.close()
+  except:
+    subprocess.call(['sudo','pico2wave','-w','/home/pi/Watchman/AudioMsgs/firstCalledMsg.wav','Hello, how are you, the system will update you shortly.'])
   print 'Admin called us, now playing status and pending messages'
   sendPendingMsgs()
   #check if we have pending messages..
-  c = open("/home/pi/Watchman/AudioMsgs/pendingMsgs.txt","r")
-  msg = c.read()
   pendingMsg = 'You have no pending messages, '
-  if len(msg) > 2:
-    pendingMsg = 'You have some pending messages, I will send them to you now, '
-  c.close()
+  try:
+    c = open("/home/pi/Watchman/AudioMsgs/pendingMsgs.txt","r")
+    msg = c.read()
+    c.close()
+    if len(msg) > 2:
+      pendingMsg = 'You have some pending messages, I will send them to you now, '
+  except:
+    c = open("/home/pi/Watchman/AudioMsgs/pendingMsgs.txt","w+")
+    c.write(' ')
+    c.close()
 
   #check the battery status and if we are running on mains power or battery power
-  b = open("/home/pi/Watchman/AudioMsgs/batteryStatus.txt","r")
-  msg = b.read()
   battMsg = 'Power source and battery status is unknown, '
-  if len(msg) > 4:
-    splitMsg = msg.split('#')
-    source = splitMsg[0]
-    level = splitMsg[1]
-    sourceMsg = 'The system is running on mains power. '
-    if(source == '1'):
-      sourceMsg = 'The system is running on battery power. '
-    battMsg = sourceMsg+'The battery level is, '+level+'.  '
-  b.close()
+  try:
+    b = open("/home/pi/Watchman/AudioMsgs/batteryStatus.txt","r")
+    msg = b.read()
+    if len(msg) > 4:
+      splitMsg = msg.split('#')
+      source = splitMsg[0]
+      level = splitMsg[1]
+      sourceMsg = 'The system is running on mains power. '
+      if(source == '1'):
+        sourceMsg = 'The system is running on battery power. '
+      battMsg = sourceMsg+'The battery level is, '+level+'.  '
+    b.close()
+  except:
+    b = open("/home/pi/Watchman/AudioMsgs/batteryStatus.txt","w+")
+    b.write(' ')
+    b.close()
 
   #play first msg as we process other commands..
   subprocess.call(['sudo','aplay','/home/pi/Watchman/AudioMsgs/firstCalledMsg.wav'])
@@ -612,6 +639,7 @@ def act_on_incoming(buf):
         global callingAdmin
         #print 'Params: '+params[0]
         if params[0][0:5] == "+CMTI":
+            subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py','Got New SMS..','1'])
             if params[1] != None:
               msgid = int(params[1])
               smsdata = read_sms(msgid)
@@ -651,6 +679,7 @@ def act_on_incoming(buf):
                   print 'Trying to send msg: '+str(sms)+' via Telegram..'
                   subprocess.Popen(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendMsg.py',str(sms),'1'])
                   sendPendingMsgs()
+            subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py','GSM Ready','1'])
             pass
         elif params[0][0:5] == '+CUSD':
             try:
@@ -669,23 +698,29 @@ def act_on_incoming(buf):
                 result = ser.readline()
               #print 'Result '+result
               if 'OK' in result:
+                subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py','Call Ongoing..','1'])
                 playMsgIfUserCalled()
                 command('ATH\r\n')
+              subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py','GSM Ready','1'])
             pass
         elif params[0] == "MO CONNECTED":
+            subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py','TALKING..','1'])
             playMsgIfCallingUser()
             command('ATH\r\n')
             callingAdmin = False
             global msgToAdmin
             msgToAdmin = ''
+            subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py','GSM Ready','1'])
             pass
         elif "+CMT:" in params[0]:
             print 'Memory full, deleting all messages..'
             if "memory is full" in buf:
               delete_all_sms()
               print 'done'
+        #subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py','GSM Ready','1'])
 
 def exitScript(e = 'Closing Script'):
+  subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py','GSM Paused','1'])
   ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
   print '['+ts+']'+': {}'.format(e)
   c = open("/home/pi/Watchman/sim800l/checkSim800lEvents.txt","w+")
@@ -749,7 +784,10 @@ def checkUnreadMsgs():
     checkingUnread = True
     global savbuf
     global sendingSms
-    print 'check if sms is being sent....: '+str(sendingSms)
+    if sendingSms:
+      print 'Sending sms in progess..'
+    else:
+      print 'No sms is being sent, proceeding..'
     try:
       count = 0
       while sendingSms and count<10:
@@ -805,7 +843,7 @@ def checkNetStatus():
     state = state.strip()
     print 'status: {}'.format(state)
     if state == '0':
-      return 'GSM: Not Registered'
+      return 'GSM: Unregistered'
     elif state == '1':
       return 'GSM: Registered'
     elif state == '2':
@@ -871,10 +909,13 @@ except Exception as e:
 
 print 'Looking for Sim800l..'
 if alive(10):
+  subprocess.call(['/home/pi/Watchman/ssd1306/display.py','Initializing GSM','1'])
   print 'Sim800l is alive..'
 else:
+  subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py','No GSM Module','1'])
   exitScript('No response closing script..')
 
+subprocess.call(['/home/pi/Watchman/ssd1306/display.py','GSM Ready','1'])
 try:
   broker_address="localhost"
   print("Starting closeCheckSimEvents listener")
@@ -941,6 +982,8 @@ try:
       if not alive(10):
         exitScript('No response from GSM Module, killing script..')
       netStatus = checkNetStatus()
+      if not 'GSM: Reg' in netStatus:
+        subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py',str(netStatus),'1'])
       print netStatus
       if 'Error' in netStatus:
         print 'Error checking network status..'

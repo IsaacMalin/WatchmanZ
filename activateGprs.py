@@ -99,6 +99,7 @@ c.close()
 
 if error == 0:
   print 'GPRS connected!!'
+  subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py','GPRS Connected','1'])
   pass
 else:
   print 'Closing gprs connection'

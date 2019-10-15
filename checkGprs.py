@@ -72,12 +72,17 @@ try:
   if status == '1':
     exitScript('GPRS is still being activated..')
 
-  c = open("/home/pi/Watchman/closingGprs.txt","r")
-  status = c.read()
-  status = status.strip()
-  c.close()
-  if status == '1':
-    exitScript('GPRS is being closed..')
+  try:
+    c = open("/home/pi/Watchman/closingGprs.txt","r")
+    status = c.read()
+    status = status.strip()
+    c.close()
+    if status == '1':
+      exitScript('GPRS is being closed..')
+  except:
+    c = open("/home/pi/Watchman/closingGprs.txt","w+")
+    status = c.write('0')
+    c.close()
 
   def checkInternet(hostname):
     print 'Checking Internet Connectivity..'
@@ -129,6 +134,7 @@ try:
 
   if not checkBot():
     print 'Bot unavailable, closing GPRS..'
+    subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py','GPRS Disconnected','1'])
     subprocess.call(['sudo','poff','rnet'])
     #subprocess.call(['sudo','route','del','default'])
     subprocess.check_output(['sudo', 'wpa_cli', '-i', 'wlan0', 'reconfigure'])

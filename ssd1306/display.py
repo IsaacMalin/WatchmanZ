@@ -1,66 +1,40 @@
-import board
-import digitalio
-from PIL import Image, ImageDraw, ImageFont
-import adafruit_ssd1306
+#!/usr/bin/python3
+import subprocess
+import sys
+import time
 
-# Define the Reset Pin
-#oled_reset = digitalio.DigitalInOut(board.D4)
+try:
+  status = '1'
+  count = 0
+  while status == '1' and count<10:
+    print(str(count)+'. Waiting to print to screen..')
+    c = open("/home/pi/Watchman/ssd1306/display.txt","r")
+    status = c.read()
+    status = status.strip()
+    c.close()
+    count += 1
+    time.sleep(1)
+except Exception as e:
+  err = 'Error: {}'.format(e)
+  print(err)
+  if 'No such file' in err:
+    c = open("/home/pi/Watchman/ssd1306/display.txt","w+")
+    status = c.write('0')
+    c.close()
+  sys.exit()
 
-# Change these
-# to the right size for your display!
-WIDTH = 128
-HEIGHT = 64     # Change to 64 if needed
-BORDER = 1
+c = open("/home/pi/Watchman/ssd1306/display.txt","w+")
+status = c.write('1')
+c.close()
 
-# Use for I2C.
-i2c = board.I2C()
-oled = adafruit_ssd1306.SSD1306_I2C(WIDTH, HEIGHT, i2c, addr=0x3c)
+#get arguments
+msg = sys.argv[1]
+section = sys.argv[2]
 
-# Clear display.
-oled.fill(0)
-oled.show()
+push_msg = str(section)+'~'+str(msg)
+subprocess.call(['sudo','/home/pi/Watchman/mqtt/mqttPub3.py','pushToDisplay',push_msg])
 
-# Create blank image for drawing.
-# Make sure to create image with mode '1' for 1-bit color.
-image = Image.new('1', (oled.width, oled.height))
-
-# Get drawing object to draw on image.
-draw = ImageDraw.Draw(image)
-
-# Draw a white background
-#draw.rectangle((0, 0, oled.width, oled.height), outline=255, fill=255)
-
-# Draw a smaller inner rectangle
-#draw.rectangle((BORDER, BORDER, oled.width - BORDER - 1, oled.height - BORDER - 1),
-#               outline=0, fill=0)
-
-
-draw.line((0, 16, oled.width-1, 16), fill=255)
-draw.line((0, 40, oled.width-1, 40), fill=255)
-draw.line((32, 41, 32, 64), fill=255)
-draw.line((0, 52, 32, 52), fill=255)
-
-# Load default font.
-#font = ImageFont.load_default()
-
-serif1 = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf', 14)
-serif2 = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf', 10)
-sans1 = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', 14)
-sans2 = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', 10)
-# Draw Some Text
-#text = "Hello World!"
-#(font_width, font_height) = font.getsize(text)
-#draw.text((oled.width//2 - font_width//2, oled.height//2 - font_height//2),
-#          text, font=font, fill=255)
-
-draw.text((1, 0), 'GSM Ready', font=sans1, fill=255)
-draw.text((1, 20), 'No Sensor Msg!!', font=sans2, fill=255)
-draw.text((1, 42), 'WiFi', font=serif2, fill=255)
-draw.text((36, 42), 'Not Connected', font=sans2, fill=255)
-draw.text((1, 54), 'Batt', font=serif2, fill=255)
-draw.text((36, 54), 'Not Detected', font=sans2, fill=255)
-
-# Display image
-oled.image(image)
-oled.show()
-
+c = open("/home/pi/Watchman/ssd1306/display.txt","w+")
+status = c.write('0')
+c.close()
+time.sleep(0.1)

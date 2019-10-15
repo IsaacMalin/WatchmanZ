@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import time
 import subprocess
+import sys
 
 try:
   c = open("/home/pi/Watchman/useGprs.txt","r")
@@ -8,7 +9,7 @@ try:
   status = status.strip()
   c.close()
 except Exception as e:
-  pass
+  sys.exit()
 
 if status == '1':
   time.sleep(10)

@@ -33,6 +33,7 @@ if status == '1':
   sys.exit()
 
 print 'Closing gprs connection'
+subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py','GPRS Closed!!','1'])
 subprocess.call(['sudo','poff','rnet'])
 #subprocess.call(['sudo','/home/pi/Watchman/sim800l/resetSim800l.py'])
 #subprocess.call(['sudo','route','del','default'])

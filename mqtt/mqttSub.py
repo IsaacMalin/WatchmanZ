@@ -22,6 +22,8 @@ def on_message(client, userdata, message):
     elif topic == 'sensorStatus':
       subprocess.Popen(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendMsg.py',msg,'0'])
       pass
+    elif topic == 'powerStatus':
+      subprocess.Popen(['sudo','/home/pi/Watchman/mqtt/handlePowerUpdate.py',msg])
 ########################################
 ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
 print '['+ts+']'
