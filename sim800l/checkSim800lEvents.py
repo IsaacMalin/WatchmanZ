@@ -163,7 +163,7 @@ def send_msg(msg):
           resetSim800l()
       else:
         print 'SMS sent!'
-        subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py','GSM Ready','1'])
+        #subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py','GSM Ready','1'])
         command('AT\n',lines = 3)
       if '+CMTI:' in _buffer:
         act_on_incoming(_buffer)
@@ -481,8 +481,17 @@ def executeSmsCmd(sms):
       msg = correctFmt
     send_msg(msg)
     pass
+  elif 'read_sensor' in sms.lower():
+    try:
+      print 'Reading Sensor..'
+      msg=subprocess.check_output(['sudo','/home/pi/Watchman/readSensor.py'])
+    except:
+      msg = 'Error reading sensor, please try again'
+    send_msg(msg)
+    pass
   elif 'configure_sensor' in sms.lower():
-    correctFmt = 'The correct format is:\n\nConfigure_sensor|wifi-ssid|password|sensor-ip|gateway-ip'
+    correctFmt = 'The correct format is:\n\nConfigure_sensor|sensor_name|wifi_ssid|password|sensor_ip|gateway-hub_ip'
+    name = ''
     ssid = ''
     pswd = ''
     sensorip = ''
@@ -491,19 +500,27 @@ def executeSmsCmd(sms):
     error = 0
     try:
       splitsms = sms.split('|')
-      ssid = str(splitsms[1].strip())
-      pswd = str(splitsms[2].strip())
-      sensorip = str(splitsms[3].strip())
-      gatewayip = str(splitsms[4].strip())
+      name = str(splitsms[1].strip())
+      ssid = str(splitsms[2].strip())
+      pswd = str(splitsms[3].strip())
+      sensorip = str(splitsms[4].strip())
+      gatewayip = str(splitsms[5].strip())
+      print 'Sensor_Name:'+name
+      print 'Sensor IP: '+sensorip
+      print 'Gateway-hub IP: '+gatewayip
     except:
       error = 1
     if error == 0:
       if validate_ip(sensorip) and validate_ip(gatewayip):
         if sensorip != gatewayip:
-          print 'Sensor IP: '+sensorip
-          print 'Gateway IP: '+gatewayip
-          #subprocess.call(['sudo','/home/pi/Watchman/configureSensor.py', sensorip, gatewayip])
-          msg='Sensor has been configured successfully!'
+          if len(name)>=1 and len(name)<=15:
+            print 'Configuring sensor..'
+            try:
+              msg = subprocess.check_output(['sudo','/home/pi/Watchman/configureSensor.py', name, ssid, pswd, sensorip, gatewayip])
+            except:
+              msg='Error configuring sensor, please try again'
+          else:
+            msg='Please provide a sensor name (15 charaters maximum)'
         else:
           msg = 'Sensor IP and Gateway IP cannot be the same.\n'+correctFmt
       else:
@@ -834,6 +851,7 @@ def checkUnreadMsgs():
       print 'Error: {}'.format(e)
       checkingUnread = False
     checkingUnread = False
+    subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py','GSM Ready','1'])
 
 def checkNetStatus():
   result = command('AT+CREG?\n',lines = 3)
@@ -916,7 +934,7 @@ else:
   subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py','No GSM Module','1'])
   exitScript('No response closing script..')
 
-subprocess.call(['/home/pi/Watchman/ssd1306/display.py','GSM Ready','1'])
+#subprocess.call(['/home/pi/Watchman/ssd1306/display.py','GSM Ready','1'])
 try:
   broker_address="localhost"
   print("Starting closeCheckSimEvents listener")

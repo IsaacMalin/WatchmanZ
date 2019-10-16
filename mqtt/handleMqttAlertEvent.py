@@ -48,8 +48,25 @@ except mariadb.Error as error:
 mariadb_connection.close()
 ms = datetime.now().strftime("%H:%M:%S")
 sensorMsg = sensorName+' ['+ip+'] reports '+alertMsg+' at '+ms
-subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py',str(ms)+' New alert from:','2'])
-subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py',str(sensorName),'3'])
+
+status = '1'
+try:
+  c = open("/home/pi/Watchman/usbSerialBusy.txt","r")
+  status = c.read()
+  status = status.strip()
+  c.close()
+except Exception as e:
+  err = 'Error: {}'.format(e)
+  #print err
+  if 'No such file' in err:
+    print('Error, please try again..')
+    c = open("/home/pi/Watchman/usbSerialBusy.txt","w+")
+    status = c.write('0')
+    c.close()
+  #sys.exit()
+if status != '1':
+  subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py',str(ms)+' New alert from:','2'])
+  subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py',str(sensorName),'3'])
 
 if sendAlert == 1:
   ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
