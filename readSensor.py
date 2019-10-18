@@ -57,6 +57,13 @@ c = open("/home/pi/Watchman/usbSerialBusy.txt","w")
 status = c.write('1')
 c.close()
 
+ssid = ''
+pswd = ''
+name = ''
+ip = ''
+hubip = ''
+routerip = ''
+
 serial = serial.Serial(
   port=usbdev,
   baudrate=115200,
@@ -74,30 +81,40 @@ subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py',' ','3'], stdout=FNULL,
 loopcount = 0
 while loopcount < 20:
   loopcount += 1
-  #print(str(loopcount)+'. Connect, reset sensor')
+  #print(str(loopcount)+'. Connect, reset sensor') #1
   buf = serial.readline()
-  #print(buf)
+  #print(buf) #2
   if len(buf)>1:
     loopcount = 0
   if 'waiting for command' in buf.lower():
     msg = 'Sensor found!!'
     FNULL = open(os.devnull, 'w')
     subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py',msg,'2'], stdout=FNULL, stderr=subprocess.STDOUT, close_fds=True)
-    serial.write('R\n')
     time.sleep(0.5)
     wait = True
     count = 0
     while wait and count < 10:
+      serial.write('R\n')
       buf = serial.readline()
+      if buf:
+        count = 0
       if '~' in buf:
-        #print(buf)
+        #print(buf) #3
         var = buf.split('~')
-        ssid = var[0]
-        pswd = var[1]
-        name = var[2]
-        ip = var[3]
-        hubip = var[4]
-        print('['+str(name)+']\nSSID:'+str(ssid)+'\nPSWD:'+str(pswd)+'\nIP:'+str(ip)+'\nG-Hub IP:'+str(hubip))
+        try:
+          ssid = var[0]
+          pswd = var[1]
+          name = var[2]
+          ip = var[3]
+          hubip = var[4]
+          routerip = var[5]
+        except:
+          print('Error reading sensor configuration, please retry later or configure again.')
+          c = open("/home/pi/Watchman/usbSerialBusy.txt","w")
+          status = c.write('0')
+          c.close()
+          sys.exit()
+        print('['+str(name)+']\nSSID:'+str(ssid)+'\nPSWD:'+str(pswd)+'\nIP:'+str(ip)+'\nG-Hub IP:'+str(hubip))+'\nRouter:'+str(routerip)
         wait = False
         msg = 'Read Success!!'
         FNULL = open(os.devnull, 'w')

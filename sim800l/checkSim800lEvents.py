@@ -33,11 +33,13 @@ def on_message(client, userdata, message):
         count += 1
         time.sleep(1)
       send_msg(msg)
+      subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py','GSM Ready','1'])
     elif topic == 'callNumber':
       global callingAdmin
       callingAdmin = True
       print 'Calling Number '+msg
       call_number(msg)
+      subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py','GSM Ready','1'])
 
 def convert_to_string(buf):
     try:
@@ -133,7 +135,7 @@ def send_sms(destno,msgtext):
 
 def resetSim800l():
   subprocess.call(['sudo','/home/pi/Watchman/sim800l/resetSim800l.py'])
-  time.sleep(5)
+  time.sleep(10)
   setup()
 
 def send_msg(msg):
@@ -384,7 +386,7 @@ def executeSmsCmd(sms):
     send_ussd(ussd)
     pass
   elif 'show_config_commands' in sms.lower():
-    send_msg('Config Commands:\n1.Connect_wifi\n2.Set_admin_number\n3.Set_callback_number\n4.Set_telegram_username\n5.Set_telegram_token\n6.Set_static_IP\n7.Configure_sensor')
+    send_msg('Config Commands:\n1.Connect_wifi\n2.Set_admin_number\n3.Set_callback_number\n4.Set_telegram_username\n5.Set_telegram_token\n6.Set_static_IP\n7.Read_sensor\n8.Configure_sensor')
     pass
   elif 'set_admin_n' in sms.lower():
     correctFmt = 'The correct format is:\n\nSet_admin_number|phoneNo'
@@ -490,12 +492,13 @@ def executeSmsCmd(sms):
     send_msg(msg)
     pass
   elif 'configure_sensor' in sms.lower():
-    correctFmt = 'The correct format is:\n\nConfigure_sensor|sensor_name|wifi_ssid|password|sensor_ip|gateway-hub_ip'
+    correctFmt = 'The correct format is:\n\nConfigure_sensor|sensor_name|wifi_ssid|password|sensor_ip|gateway-hub_ip|router_ip'
     name = ''
     ssid = ''
     pswd = ''
     sensorip = ''
     gatewayip = ''
+    routerip = ''
     msg = ''
     error = 0
     try:
@@ -505,24 +508,32 @@ def executeSmsCmd(sms):
       pswd = str(splitsms[3].strip())
       sensorip = str(splitsms[4].strip())
       gatewayip = str(splitsms[5].strip())
+      routerip = str(splitsms[6].strip())
       print 'Sensor_Name:'+name
       print 'Sensor IP: '+sensorip
       print 'Gateway-hub IP: '+gatewayip
+      print 'Router IP:'+routerip
     except:
       error = 1
     if error == 0:
-      if validate_ip(sensorip) and validate_ip(gatewayip):
-        if sensorip != gatewayip:
+      if validate_ip(sensorip) and validate_ip(gatewayip) and validate_ip(routerip):
+        if sensorip != gatewayip and sensorip != routerip and routerip != gatewayip:
           if len(name)>=1 and len(name)<=15:
-            print 'Configuring sensor..'
-            try:
-              msg = subprocess.check_output(['sudo','/home/pi/Watchman/configureSensor.py', name, ssid, pswd, sensorip, gatewayip])
-            except:
-              msg='Error configuring sensor, please try again'
+            if len(ssid)>=1 and len(ssid)<=15:
+              if len(pswd)>=1 and len(pswd)<=15:
+                print 'Configuring sensor..'
+                try:
+                  msg = subprocess.check_output(['sudo','/home/pi/Watchman/configureSensor.py', name, ssid, pswd, sensorip, gatewayip, routerip])
+                except:
+                  msg='Error configuring sensor, please try again'
+              else:
+                msg='Please provide WiFi password (15 characters maximum)'
+            else:
+              msg='Please provide WiFi ssid (15 characters maximum)'
           else:
             msg='Please provide a sensor name (15 charaters maximum)'
         else:
-          msg = 'Sensor IP and Gateway IP cannot be the same.\n'+correctFmt
+          msg = 'IP addresses cannot be similar.\n'+correctFmt
       else:
         msg='Please provide valid IP addresses.\n'+correctFmt
     else:

@@ -112,4 +112,5 @@ else:
   status = c.write('0')
   c.close()
   print msg
+  time.sleep(15)
   subprocess.call(['sudo','/home/pi/Watchman/sendSMS.py',str(msg)])

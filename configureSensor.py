@@ -59,6 +59,7 @@ try:
   pswd = sys.argv[3]
   ip = sys.argv[4]
   hubip = sys.argv[5]
+  routerip = sys.argv[6]
 except:
   print('Error configuring sensor, please retry..')
   sys.exit()
@@ -99,8 +100,10 @@ while loopcount < 20:
     count = 0
     while wait and count < 10:
       buf = serial.readline()
+      if buf:
+        count = 0
       if 'waiting for data' in buf.lower():
-        serial.write(str(name)+'~'+str(ssid)+'~'+str(pswd)+'~'+str(ip)+'~'+str(hubip))
+        serial.write(str(name)+'~'+str(ssid)+'~'+str(pswd)+'~'+str(ip)+'~'+str(hubip)+'~'+str(routerip))
         time.sleep(1)
         wait = False
         buf = serial.readline()

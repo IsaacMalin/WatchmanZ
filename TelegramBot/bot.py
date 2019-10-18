@@ -173,7 +173,7 @@ def validate_uniqueID(id):
     return True
 
 def validate_description(d):
-    if len(d) < 2 or len(d) > 50:
+    if len(d) < 2 or len(d) >= 20:
         return False
     return True
 

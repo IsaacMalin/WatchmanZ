@@ -15,8 +15,8 @@ adminNo = ''
 callbackNo = ''
 gpsStatus = ''
 
-config = SafeConfigParser()
 try:
+  config = SafeConfigParser()
   config.read('/home/pi/Watchman/WatchmanConfig.ini')
 except:
   username = 'Not_set'
@@ -72,13 +72,13 @@ def checkInternet(hostname):
   return False
 
 REMOTE_SERVER = 'www.google.com'
-ps = subprocess.Popen(['iwconfig'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 try:
+    ps = subprocess.Popen(['iwconfig'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     output = subprocess.check_output(('grep', 'ESSID'), stdin=ps.stdout)
     connectivity = 'Connected'
     ssid = output.split('"')[1]
     ip = subprocess.check_output(['sudo','hostname','-I']).strip()
-except subprocess.CalledProcessError:
+except:
     # grep did not match any lines
     connectivity = 'Not connected'
     ip = 'None'
