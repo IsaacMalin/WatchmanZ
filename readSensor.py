@@ -64,20 +64,34 @@ ip = ''
 hubip = ''
 routerip = ''
 
+msg = 'Connect and reset sensor'
+FNULL = open(os.devnull, 'w')
+subprocess.call(['/home/pi/Watchman/ssd1306/display.py',msg,'2'], stdout=FNULL, stderr=subprocess.STDOUT, close_fds=True)
+FNULL = open(os.devnull, 'w')
+subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py',' ','3'], stdout=FNULL, stderr=subprocess.STDOUT, close_fds=True)
+
+baud = 9600
 serial = serial.Serial(
   port=usbdev,
-  baudrate=115200,
+  baudrate=baud,
   parity=serial.PARITY_NONE,
   stopbits=serial.STOPBITS_ONE,
   bytesize=serial.EIGHTBITS,
   timeout=1
 )
 
-msg = 'Connect and reset sensor'
-FNULL = open(os.devnull, 'w')
-subprocess.call(['/home/pi/Watchman/ssd1306/display.py',msg,'2'], stdout=FNULL, stderr=subprocess.STDOUT, close_fds=True)
-FNULL = open(os.devnull, 'w')
-subprocess.Popen(['/home/pi/Watchman/ssd1306/display.py',' ','3'], stdout=FNULL, stderr=subprocess.STDOUT, close_fds=True)
+for x in range(20):
+  #print(str(x)+'. '+str(baud))
+  buf = serial.readline()
+  if 'waiting' in buf.lower():
+    break
+  else:
+    serial.baudrate = baud
+    if baud == 9600:
+      baud = 115200
+    else:
+      baud = 9600
+
 loopcount = 0
 while loopcount < 20:
   loopcount += 1

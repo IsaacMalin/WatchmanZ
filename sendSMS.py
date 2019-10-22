@@ -27,7 +27,7 @@ print 'sending sms...'
 #logfile = open("/home/pi/Watchman/logs/checkSim800lEvents.log", 'a+')
 #subprocess.Popen(['sudo','/home/pi/Watchman/sim800l/checkSim800lEvents.py'],stderr=subprocess.STDOUT, stdout=logfile)
 subprocess.Popen(['sudo','/home/pi/Watchman/sim800l/checkSim800lEvents.py'])
-time.sleep(3)
+time.sleep(15)
 subprocess.call(['sudo','/home/pi/Watchman/mqtt/mqttPub.py','sendSMS',str(sms)])
 
 

@@ -32,10 +32,12 @@ def sendPendingMsgs():
         for msg in p:
           print 'Sending a message..'
           result = subprocess.check_output(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendMsg.py',str(msg),'0'])
+          print result
           if not 'sent' in result:
             if len(str(msg))>5:
               print 'Message not sent, returning it to pending msgs.'
-              stillPending += msg+'~'
+              if not '`' in msg:
+                stillPending += msg+'`~'
         c = open("/home/pi/Watchman/AudioMsgs/pendingMsgs.txt","w")
         c.write(stillPending)
         c.close()
