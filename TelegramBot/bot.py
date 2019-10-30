@@ -177,6 +177,16 @@ def validate_description(d):
         return False
     return True
 
+def validate_state_msg(msg):
+  if len(msg) < 2 or len(msg) > 80:
+    return False
+  return True
+
+def validate_deviceNo(devNo):
+  if len(str(devNo)) < 4:
+    return False
+  return True
+
 def action(msg):
   try:
     chat_id = msg['chat']['id']
@@ -216,7 +226,7 @@ def action(msg):
             telegram_bot.sendMessage (chat_id, str("NRF-Sensor Configuration Commands:\n\n/NRF_show_registered_sensors\n\n/NRF_show_configuration|SensorID\n\n/NRF_register_sensor|nodeID|localID|globalID|description\n\n/NRF_remove_sensor|SensorID\n\n/NRF_enable_message|SensorID\n\n/NRF_disable_message|SensorID\n\n/NRF_enable_media|SensorID\n\n/NRF_disable_media|SensorID\n\n/NRF_enable_sms|SensorID\n\n/NRF_disable_sms|SensorID\n\n/NRF_use_media|mediatype|SensorID\n\n/NRF_use_camera|cameratype|SensorID|ipaddress\n\n/NRF_set_videolength|seconds|SensorID"))
             pass
         elif '/show_ip_sensor_commands' in commandL:
-            telegram_bot.sendMessage (chat_id, str("IP-Sensor Configuration Commands:\n\n/IP_show_registered_sensors\n\n/IP_show_configuration|ipaddress\n\n/IP_register_sensor|ipaddress|description\n\n/IP_remove_sensor|ipaddress\n\n/IP_enable_message|ipaddress\n\n/IP_disable_message|ipaddress\n\n/IP_enable_media|ipaddress\n\n/IP_disable_media|ipaddress\n\n/IP_enable_sms|ipaddress\n\n/IP_disable_sms|ipaddress\n\n/IP_use_media|mediatype|ipaddress\n\n/IP_use_camera|cameratype|sensoripaddress|cameraipaddress\n\n/IP_set_videolength|seconds|ipaddress"))
+            telegram_bot.sendMessage (chat_id, str("IP-Sensor Configuration Commands:\n\n/IP_show_registered_sensors\n\n/IP_show_configuration|ipaddress\n\n/IP_register_sensor|ipaddress|description\n\n/IP_remove_sensor|ipaddress\n\n/IP_enable_message|ipaddress\n\n/IP_disable_message|ipaddress\n\n/IP_enable_media|ipaddress\n\n/IP_disable_media|ipaddress\n\n/IP_enable_sms|ipaddress\n\n/IP_disable_sms|ipaddress\n\n/IP_use_media|mediatype|ipaddress\n\n/IP_use_camera|cameratype|sensoripaddress|cameraipaddress\n\n/IP_set_videolength|seconds|ipaddress\n\n/IP_set_alert_message|End Device No|opened state message|closed state message\n\n/IP_show_alert_messages\n\n/IP_remove_alert_message|End Device No"))
             pass
         elif '/show_camera_commands' in commandL:
             telegram_bot.sendMessage (chat_id, str("Camera Configuration Commands:\n\n/Capture|mediatype|cameratype|seconds|ipaddress\n\n/Show_available_camera\n\n/IPCam_register_camera|ipaddress|description\n\n/IPCam_remove_camera|ipaddress"))
@@ -757,6 +767,134 @@ def action(msg):
               msg = 'Use the correct syntax and try again. '+correctFmt
             telegram_bot.sendMessage(chat_id, str(msg))
             pass
+        elif '/ip_set_alert_message' in commandL:
+            device = None
+            openMsg = None
+            closeMsg = None
+            try:
+              device  =  commandS[1]
+              openMsg = commandS2[2]
+              closeMsg = commandS2[3]
+              error = 0
+            except:
+              if device == None or openMsg == None:
+                error = 1
+              elif closeMsg == None:
+                error = 2
+            correctFmt = 'The correct format is: \n\n\'/IP_set_alert_message | End Device No | trigger message\'\n                      or\n\'/IP_set_alert_message | End Device No | opened state message | closed state message\'\n\nClosed state message is optional where sensor is triggered to only one state e.g motion sensor. In that case use the first format. For sensors being triggered to opened or closed state e.g magnetic door switch sensor, use second format and fill in all sections.'
+            if error  == 0:
+              if validate_deviceNo(device):
+                if validate_state_msg(openMsg):
+                  if validate_state_msg(closeMsg):
+                    mariadb_connection2 = mariadb.connect(user=usr, password=pswd,database=db)
+                    cursor2 = mariadb_connection2.cursor()
+                    try:
+                      cursor2.execute("INSERT INTO sensorAlertMsgs (deviceCode,openStateMsg, closedStateMsg) VALUES('%s','%s','%s')"%(str(device),str(openMsg),str(closeMsg)))
+                      mariadb_connection2.commit()
+                      msg = 'Opened state and closed state alert messages for End Device No ('+device+') was set successfully.'
+                    except mariadb.Error as e:
+                      if 'Duplicate entry' in 'Err {}'.format(e):
+                        try:
+                          cursor2.execute("UPDATE sensorAlertMsgs SET openStateMsg = '%s', closedStateMsg = '%s' WHERE deviceCode = '%s'"%(str(openMsg),str(closeMsg),str(device)))
+                          mariadb_connection2.commit()
+                          msg = 'Opened state and closed state alert messages for End Device No ('+device+') was updated successfully.'
+                        except mariadb.Error as e:
+                          print 'DBError: {}'.format(e)
+                          msg = 'Error updating alert message, please try again.'
+                      else:
+                        print 'DBError: {}'.format(e)
+                        msg = 'Error setting alert message, please try again'
+                    cursor2.close()
+                    mariadb_connection2.close()
+                  else:
+                    msg = 'Check closed state message section, please provide a message and note maximum length is 80 characters. '+correctFmt
+                else:
+                  msg = 'Check open state message section, please provide a message and note maximum length is 80 characters. '+correctFmt
+              else:
+                msg = 'Please provide valid End Device No. '+correctFmt
+            else:
+              if error == 2:
+                if validate_deviceNo(device):
+                  if validate_state_msg(openMsg):
+                    mariadb_connection3 = mariadb.connect(user=usr, password=pswd,database=db)
+                    cursor3 = mariadb_connection3.cursor()
+                    try:
+                      cursor3.execute("INSERT INTO sensorAlertMsgs (deviceCode,openStateMsg) VALUES('%s','%s')"%(str(device),str(openMsg)))
+                      mariadb_connection3.commit()
+                      msg = 'Trigger alert messages for End Device No ('+device+') was set successfully.'
+                    except mariadb.Error as e:
+                      if 'Duplicate entry' in 'Err {}'.format(e):
+                        try:
+                          cursor3.execute("UPDATE sensorAlertMsgs SET openStateMsg = '%s' WHERE deviceCode = '%s'"%(str(openMsg),str(device)))
+                          mariadb_connection3.commit()
+                          msg = 'Trigger alert messages for End Device No ('+device+') was updated successfully.'
+                        except mariadb.Error as e:
+                          print 'DBError: {}'.format(e)
+                          msg = 'Error updating alert message, please try again.'
+                      else:
+                        print 'DBError: {}'.format(e)
+                        msg = 'Error setting alert message, please try again'
+                    cursor3.close()
+                    mariadb_connection3.close()
+                  else:
+                    msg = 'Check trigger message section, please provide a message and note maximum length is 80 characters. '+correctFmt
+                else:
+                  msg = 'Please provide valid End Device No. '+correctFmt
+              else:
+                msg = 'Please provide End Device No and note that opened state message section must be filled in. '+correctFmt
+            telegram_bot.sendMessage(chat_id, str(msg))
+        elif '/ip_show_alert_messages' in commandL:
+          mariadb_connection = mariadb.connect(user=usr, password=pswd, database=db)
+          cursor1 = mariadb_connection.cursor()
+          try:
+            cursor1.execute("SELECT * FROM sensorAlertMsgs")
+            result = cursor1.fetchall()
+            rowCount = len(result)
+            if rowCount >= 1:
+              count = 1
+              msg = ''
+              for row in result:
+                device = row[0]
+                openMsg = row[1]
+                closeMsg = row[2]
+                msg += str(count)+'. device ['+device+']\nopened state msg ('+str(openMsg)+')\nclosed state msg ('+str(closeMsg)+')\n\n'
+                count += 1
+            else:
+              msg = 'You have not set any alert messages, please use this command \'/IP_set_alert_message\' to set alert messages.'
+          except mariadb.Error as e:
+            print 'DBError {}'.format(e)
+            msg = 'Error occurred, please try again'
+          cursor1.close()
+          mariadb_connection.close()
+          telegram_bot.sendMessage(chat_id, str(msg))
+        elif '/ip_remove_alert_message' in commandL:
+          try:
+            device = commandS[1]
+            error = 0
+          except:
+            error = 1
+          if error == 0:
+            if validate_deviceNo(device):
+              mariadb_connection = mariadb.connect(user=usr, password=pswd, database=db)
+              cursor = mariadb_connection.cursor()
+              try:
+                cursor.execute("DELETE FROM sensorAlertMsgs WHERE deviceCode = '%s'"%(str(device)))
+                rowCount = cursor.rowcount
+                mariadb_connection.commit()
+                if rowCount >= 1:
+                  msg = 'Alert message has been deleted.'
+                else:
+                  msg = 'Operation failed, please check if alert message exists and try again.'
+              except mariadb.Error as e:
+                print 'DBError: {}'.format(e)
+                msg = 'Error removing alert message, please try again'
+              cursor.close()
+              mariadb_connection.close()
+            else:
+              msg = 'Please provide a valid End Device No, the correct format is:\n\'/IP_remove_alert_message | End Device No\''
+          else:
+            msg = 'Please provide End Device No, the correct format is:\n\'/IP_remove_alert_message | End Device No\''
+          telegram_bot.sendMessage(chat_id, str(msg))
         elif '/nrf_use_camera' in commandL:
             try:
               cam = commandS[1]

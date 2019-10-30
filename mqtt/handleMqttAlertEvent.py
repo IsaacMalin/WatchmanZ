@@ -17,10 +17,16 @@ db = config.get('credentials', 'database')
 msg = sys.argv[1]
 msgSplit = msg.split('^')
 
-ip = msgSplit[0]
-alertMsg = msgSplit[1]
+try:
+  ip = msgSplit[0]
+  port = msgSplit[1]
+  state = msgSplit[2]
+  device = msgSplit[3]
+except Exception as e:
+  print 'Error: {}'.format(e)
+  sys.exit()
 
-print 'IP: '+ip+' reports msg: '+alertMsg
+print 'IP: '+ip+' reports msg: '+state
 
 time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -43,12 +49,45 @@ try:
   cursor.close()
 except mariadb.Error as error:
   print("Error: {}".format(error))
-  exit()
+  sys.exit()
 
 mariadb_connection.close()
-ms = datetime.now().strftime("%H:%M:%S")
-sensorMsg = sensorName+' ['+ip+'] reports '+alertMsg+' at '+ms
 
+mariadb_connection2 = mariadb.connect(user=usr, password=pswd,database=db)
+cursor2 = mariadb_connection2.cursor()
+openMsg = ''
+closeMsg = ''
+
+try:
+  cursor2.execute("SELECT * FROM sensorAlertMsgs WHERE deviceCode = '"+str(device)+"'")
+  result2 = cursor2.fetchall()
+  for row in result2:
+    openMsg = row[1]
+    closeMsg = row[2]
+  cursor2.close()
+except mariadb.Error as error:
+  print("Error: {}".format(error))
+
+mariadb_connection2.close()
+
+if openMsg == None:
+  openMsg = 'sensor triggered to open state.'
+if closeMsg == None:
+  closeMsg = 'sensor triggered to closed state.'
+
+ms = datetime.now().strftime("%H:%M:%S")
+if state == '000':
+  sensorMsg = '['+ms+'] '+sensorName+' ('+ip+') reports Port-'+port+' sensor has gone offline'
+elif state == '111':
+  sensorMsg = '['+ms+'] '+sensorName+' ('+ip+') reports new sensor connected to Port-'+port
+elif state == '001':
+  sensorMsg = '['+ms+'] '+sensorName+' ('+ip+') reports Port-'+port+' '+openMsg
+elif state == '011':
+  sensorMsg = '['+ms+'] '+sensorName+' ('+ip+') reports Port-'+port+' '+closeMsg
+else:
+  sensorMsg = '['+ms+'] '+sensorName+' ('+ip+') reports sensor activity detected!!'
+
+#check if user is programming a sensor so that we dont print to oled
 status = '1'
 try:
   c = open("/home/pi/Watchman/usbSerialBusy.txt","r")
