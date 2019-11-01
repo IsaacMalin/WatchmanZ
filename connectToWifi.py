@@ -26,6 +26,7 @@ try:
     if len(str(result)) < 6:
       print 'ssid found but failed to connect, please confirm your password and try again.'
     else:
+      subprocess.call(['sudo','/home/pi/Watchman/saveWatchmanConfig.py','staticip', ' '])
       print 'connected to SSID: '+ssid+' with IP: '+result+'\nPlease configure new static IP \n\'Set_static_IP|gatewayIP|routerIP|dns\''
 
   else:

@@ -673,7 +673,7 @@ def action(msg):
                 elif state == '0':
                   msg = 'The IP did not match any registered WiFi Sensors. Please confirm the IP and try again, you entered: \''+ip+'\' as your WiFi Sensor IP Address.'
                 elif state == 'C':
-                  msg = "Please configure the camera type to use first. Use the following command: \n\n/'IP_use_camera | cameratype | sensorIP | cameraIP'."
+                  msg = "Please configure the camera type to use first. Use the following command: \n\n'/IP_use_camera | cameratype | sensorIP | cameraIP'."
                 else:
                   msg = 'Operation failed, please try again..'
               else:

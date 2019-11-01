@@ -7,6 +7,7 @@ from ConfigParser import SafeConfigParser
 connectivity = ''
 ssid = ''
 ip = ''
+staticIp = ''
 net = ''
 username = ''
 token = ''
@@ -27,6 +28,10 @@ try:
   username = config.get('ConfigVariables', 'username')
 except:
   username = 'Not_set'
+try:
+  staticIp = config.get('ConfigVariables', 'staticip')
+except:
+  staticIp = 'Not_set'
 try:
   tok = config.get('ConfigVariables', 'token')
   if len(str(tok)) > 30:
@@ -98,4 +103,4 @@ if  'C' in net:
 else:
   botStatus = 'Unknown'
 
-print '[WiFi]\nStatus: '+connectivity+'\nSSID: '+ssid+'\nIP: '+ip+'\nInternet: '+net+'\n|[Telegram]\nUsername: '+username+'\nToken: '+token+'\nBot: '+botStatus+'\n|[GSM]\nAdmin: '+adminNo+'\nCallback: '+callbackNo+'\nGPRS: '+gprsStatus
+print '[WiFi]\nStatus: '+connectivity+'\nSSID: '+ssid+'\nIP: '+ip+'\nStatic IP: '+staticIp+'\nInternet: '+net+'\n|[Telegram]\nUsername: '+username+'\nToken: '+token+'\nBot: '+botStatus+'\n|[GSM]\nAdmin: '+adminNo+'\nCallback: '+callbackNo+'\nGPRS: '+gprsStatus

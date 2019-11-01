@@ -1021,5 +1021,5 @@ try:
       count = 0
     check_incoming()
     time.sleep(1)
-except Exception as e:
-  exitScript(e)
+except:
+  exitScript()

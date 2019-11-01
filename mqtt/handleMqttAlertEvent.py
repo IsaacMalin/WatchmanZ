@@ -77,13 +77,13 @@ if closeMsg == None:
 
 ms = datetime.now().strftime("%H:%M:%S")
 if state == '000':
-  sensorMsg = '['+ms+'] '+sensorName+' ('+ip+') reports Port-'+port+' sensor has gone offline'
+  sensorMsg = '['+ms+'] '+sensorName+' ('+ip+') Port-'+port+' reports sensor has gone offline'
 elif state == '111':
   sensorMsg = '['+ms+'] '+sensorName+' ('+ip+') reports new sensor connected to Port-'+port
 elif state == '001':
-  sensorMsg = '['+ms+'] '+sensorName+' ('+ip+') reports Port-'+port+' '+openMsg
+  sensorMsg = '['+ms+'] '+sensorName+' ('+ip+') Port-'+port+' reports '+openMsg
 elif state == '011':
-  sensorMsg = '['+ms+'] '+sensorName+' ('+ip+') reports Port-'+port+' '+closeMsg
+  sensorMsg = '['+ms+'] '+sensorName+' ('+ip+') Port-'+port+' reports '+closeMsg
 else:
   sensorMsg = '['+ms+'] '+sensorName+' ('+ip+') reports sensor activity detected!!'
 

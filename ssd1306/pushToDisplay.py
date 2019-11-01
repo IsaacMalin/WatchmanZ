@@ -154,5 +154,5 @@ sans2 = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', 10
 try:
   while True:
     time.sleep(1)
-except Exception as e:
+except:
   exitScript(e)

@@ -2,7 +2,7 @@
 import mysql.connector as mariadb
 import MySQLdb
 import subprocess
-import time
+import time as t
 from datetime import datetime
 from ConfigParser import SafeConfigParser
 
@@ -19,6 +19,8 @@ time = datetime.now()
 
 mariadb_connection = mariadb.connect(user=usr, password=pswd,database=db)
 cursor = mariadb_connection.cursor()
+#sleep to allow other scripts to update their status first before checking for dead sensors i.e if both scripts are triggered at the same time
+t.sleep(5)
 
 try:
   cursor.execute("SELECT IP, sensorName, lastSeen, deviceType FROM registeredWifiSensors UNION SELECT IP, camName, lastSeen, deviceType FROM registeredIPCameras")

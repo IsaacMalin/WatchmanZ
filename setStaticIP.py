@@ -19,6 +19,7 @@ except:
   error = 1
 
 if error == 0:
+  subprocess.call(['sudo','/home/pi/Watchman/saveWatchmanConfig.py','staticip',str(ip)])
   print 'done'
 else:
   print 'error'
