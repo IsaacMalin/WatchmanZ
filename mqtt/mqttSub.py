@@ -60,9 +60,9 @@ def port1Triggered(channel):
   time.sleep(0.005)
   timing9 = GPIO.input(port1)
 
-  if (timing4 == 0 and timing5 == 1) or (timing1 == 0 and timing2 == 0 and timing3 == 0 and timing4 == 0 and timing5 == 0):
+  if (timing8 == 0 and timing9 == 1) or (timing1 == 0 and timing2 == 0 and timing3 == 0 and timing4 == 0 and timing5 == 0 and timing6 == 0 and timing7 == 0 and timing8 == 0 and timing9 == 0):
     try:
-      msg =  str(ip)+'^1^'+str(timing1)+str(timing2)+str(timing3)+'^'+str(timing6)+str(timing7)+str(timing8)+str(timing9)
+      msg =  str(ip)+'^1^'+str(timing1)+str(timing2)+str(timing3)+'^'+str(timing4)+str(timing5)+str(timing6)+str(timing7)
       print msg
       subprocess.Popen(['sudo','/home/pi/Watchman/mqtt/handleMqttAlertEvent.py',msg])
     except Exception as e:
@@ -88,9 +88,9 @@ def port2Triggered(channel):
   time.sleep(0.005)
   timing9 = GPIO.input(port2)
 
-  if (timing4 == 0 and timing5 == 1) or (timing1 == 0 and timing2 == 0 and timing3 == 0 and timing4 == 0 and timing5 == 0):
+  if (timing8 == 0 and timing9 == 1) or (timing1 == 0 and timing2 == 0 and timing3 == 0 and timing4 == 0 and timing5 == 0 and timing6 == 0 and timing7 == 0 and timing8 == 0 and timing9 == 0):
     try:
-      msg =  str(ip)+'^2^'+str(timing1)+str(timing2)+str(timing3)+'^'+str(timing6)+str(timing7)+str(timing8)+str(timing9)
+      msg =  str(ip)+'^2^'+str(timing1)+str(timing2)+str(timing3)+'^'+str(timing4)+str(timing5)+str(timing6)+str(timing7)
       print msg
       subprocess.Popen(['sudo','/home/pi/Watchman/mqtt/handleMqttAlertEvent.py',msg])
     except Exception as e:
@@ -116,9 +116,9 @@ def port3Triggered(channel):
   time.sleep(0.005)
   timing9 = GPIO.input(port3)
 
-  if (timing4 == 0 and timing5 == 1) or (timing1 == 0 and timing2 == 0 and timing3 == 0 and timing4 == 0 and timing5 == 0):
+  if (timing8 == 0 and timing9 == 1) or (timing1 == 0 and timing2 == 0 and timing3 == 0 and timing4 == 0 and timing5 == 0 and timing6 == 0 and timing7 == 0 and timing8 == 0 and timing9 == 0):
     try:
-      msg =  str(ip)+'^3^'+str(timing1)+str(timing2)+str(timing3)+'^'+str(timing6)+str(timing7)+str(timing8)+str(timing9)
+      msg =  str(ip)+'^3^'+str(timing1)+str(timing2)+str(timing3)+'^'+str(timing4)+str(timing5)+str(timing6)+str(timing7)
       print msg
       subprocess.Popen(['sudo','/home/pi/Watchman/mqtt/handleMqttAlertEvent.py',msg])
     except Exception as e:

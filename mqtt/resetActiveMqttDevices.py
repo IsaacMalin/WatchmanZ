@@ -34,7 +34,7 @@ try:
       timeDifference = time - lastSeen
     else:
       continue
-    if timeDifference.total_seconds() > 130:
+    if timeDifference.total_seconds() > 240:
       msg = ip+'^'+name+'^'+deviceType+'^D^0^0'
       #print msg
       subprocess.call(['sudo','/home/pi/Watchman/mqtt/handleMqttSensorUpdates.py',msg])

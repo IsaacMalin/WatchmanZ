@@ -70,9 +70,12 @@ except mariadb.Error as error:
 
 mariadb_connection2.close()
 
-if openMsg == None:
+#print 'Open State: '+str(openMsg)
+#print 'Closed State:'+str(closeMsg)
+
+if openMsg == None or len(openMsg) < 1:
   openMsg = 'sensor triggered to open state.'
-if closeMsg == None:
+if closeMsg == None or len(closeMsg) < 1:
   closeMsg = 'sensor triggered to closed state.'
 
 ms = datetime.now().strftime("%H:%M:%S")
