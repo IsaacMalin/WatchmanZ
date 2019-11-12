@@ -31,6 +31,22 @@ c = open("/home/pi/Watchman/wifiConnected.txt","w+")
 status = c.write('0')
 c.close()
 
+c = open("/home/pi/Watchman/Images/takePiCamImg.txt","w+")
+status = c.write('0')
+c.close()
+
+c = open("/home/pi/Watchman/Images/takeUSB1CamImg.txt","w+")
+status = c.write('0')
+c.close()
+
+c = open("/home/pi/Watchman/Videos/takePiCamVid.txt","w+")
+status = c.write('0')
+c.close()
+
+c = open("/home/pi/Watchman/Videos/takeUSB1CamVid.txt","w+")
+status = c.write('0')
+c.close()
+
 subprocess.call(['/home/pi/Watchman/ssd1306/display.py','Booting..','1'])
 subprocess.call(['/home/pi/Watchman/ssd1306/display.py','Searching..','4'])
 ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
