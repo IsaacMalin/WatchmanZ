@@ -146,7 +146,7 @@ if sendAlert == 1:
     if mediaOption == 'v':
       if camType == 'usbcam':
         vidPath = '/home/pi/Videos/USB1Cam/'
-        vidName = 'USB1Cam['+ts+'].avi'
+        vidName = 'USB1Cam['+ts+'].mp4'
         vpath = vidPath+vidName
         #take video from usb1-camera
         output = subprocess.call(["sudo", "/home/pi/Watchman/Videos/takeUSB1CamVid.sh", vpath, str(vidLength)])

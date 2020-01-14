@@ -1054,12 +1054,12 @@ def action(msg):
                         msg = 'Please provide an IP Address. '+correctFmt
                     elif camType.lower() == 'usbcam':
                       telegram_bot.sendMessage(chat_id, str("Attempting to capture "+str(seconds)+" Sec video from USB camera.."))
-                      output = subprocess.call(["sudo", "rm", "/home/pi/Watchman/Videos/usb1camvid.avi"])
-                      output = subprocess.call(["sudo", "/home/pi/Watchman/Videos/takeUSB1CamVid.sh", "/home/pi/Watchman/Videos/usb1camvid.avi", str(seconds)])
-                      fileExists = os.path.exists('/home/pi/Watchman/Videos/usb1camvid.avi')
+                      output = subprocess.call(["sudo", "rm", "/home/pi/Watchman/Videos/usb1camvid.mp4"])
+                      output = subprocess.call(["sudo", "/home/pi/Watchman/Videos/takeUSB1CamVid.sh", "/home/pi/Watchman/Videos/usb1camvid.mp4", str(seconds)])
+                      fileExists = os.path.exists('/home/pi/Watchman/Videos/usb1camvid.mp4')
                       if fileExists == True:
                         telegram_bot.sendMessage(chat_id, str("Captured "+str(seconds)+" Sec video from USB camera, trying to send video.."))
-                        subprocess.Popen(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendVid.py','/home/pi/Watchman/Videos/usb1camvid.avi'])
+                        subprocess.Popen(['sudo','/home/pi/Watchman/TelegramBot/TelegramSendVid.py','/home/pi/Watchman/Videos/usb1camvid.mp4'])
                       else:
                         telegram_bot.sendMessage(chat_id, str("Video capture from USB camera unsuccessful, please make sure camera is available and retry.."))
                     elif camType.lower() == 'picam':

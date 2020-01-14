@@ -8,7 +8,7 @@
   else
   echo '1' > /home/pi/Watchman/Images/takePiCamImg.txt
   echo "Taking Pi-Camera pic.."
-  raspistill -w 1024 -h 768 -o $imgPath
+  raspistill -w 1024 -h 768 --annotate 12 -o $imgPath
   echo "done taking Pi-pic!"
   echo '0' > /home/pi/Watchman/Images/takePiCamImg.txt
   fi

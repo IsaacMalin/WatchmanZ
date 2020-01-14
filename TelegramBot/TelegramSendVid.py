@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import telepot
 import sys
+import os
 from ConfigParser import SafeConfigParser
 
 #check if gprs is activated
@@ -38,6 +39,7 @@ bot = telepot.Bot(token)
 try:
   bot.sendVideo (chat_id, video=open(vidPath))
   print 'sent'
+  os.remove(vidPath)
 except Exception as e:
   print e
   print 'failed'

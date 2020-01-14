@@ -2,6 +2,7 @@
 import telepot
 import sys
 import subprocess
+import os
 from ConfigParser import SafeConfigParser
 
 config = SafeConfigParser()
@@ -39,6 +40,9 @@ try:
   print 'Sending image..'
   bot.sendPhoto (chat_id, photo=open(picPath))
   print 'sent'
+  os.remove(picPath)
 except Exception as e:
   print 'failed'
-subprocess.call(['sudo','rm','pic-sm.jpg'])
+
+if status == '1':
+  subprocess.call(['sudo','rm','pic-sm.jpg'])
